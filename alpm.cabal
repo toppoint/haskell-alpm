@@ -1,0 +1,46 @@
+Name:          alpm
+Version:       0.0
+Stability:     Alpha
+Synopsis:      Bindings for the Arch Linux Package Management library.
+Description:   Bindings for the Arch Linux Package Management library.
+License:       GPL
+License-File:  LICENSE
+Build-Type:    Simple
+Cabal-Version: >=1.8
+Author:        Andreas Baldeau
+Maintainer:    Andreas Baldeau <andreas@baldeau.net>
+Homepage:      http://github.com/baldo/haskell-alpm
+Bug-Reports:   http://github.com/baldo/haskell-alpm
+Category:      Graphics
+Tested-With:   GHC == 7.0.2
+
+Extra-Source-Files:
+    README
+
+Source-Repository head
+    Type:     git
+    Location: git://github.com/baldo/haskell-alpm
+
+Library
+    Hs-Source-Dirs:
+        src
+
+    Build-Depends:
+        base >= 4 && < 5
+
+    Build-Tools:
+        c2hs >= 0.16.3 && < 0.17
+
+    Ghc-Options:
+        -Wall
+
+    Exposed-Modules:
+        Distribution.ArchLinux.ALPM.Types
+        Distribution.ArchLinux.ALPM.Core
+
+    Extra-Libraries:
+        alpm
+
+    Extensions:
+        ForeignFunctionInterface
+
