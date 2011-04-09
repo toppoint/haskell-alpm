@@ -20,15 +20,17 @@ import Control.Monad (liftM)
 -- General ------------------------------------------------------------------
 
 -- | This function needs to be called first or nothing else will work.
-initialize :: IO CInt
+initialize :: IO Error
 initialize =
-    {# call initialize #}
+    liftM (toEnum . fromIntegral) $
+        {# call initialize #}
 
 -- | Call this function to clean up. After this the library is no longer
 -- available
-release :: IO CInt
+release :: IO Error
 release =
-    {# call release #}
+    liftM (toEnum . fromIntegral) $
+        {# call release #}
 
 -- | Get ALPM's version.
 getVersion :: IO String
@@ -242,13 +244,15 @@ databaseRegisterSync treeName = do
     db <- withCString treeName $ {# call db_register_sync #}
     return $ checkForNull unDatabase db
 
-databaseUnregister :: Database -> IO CInt
+databaseUnregister :: Database -> IO Error
 databaseUnregister db =
-    {# call db_unregister #} db
+    liftM (toEnum . fromIntegral) $
+        {# call db_unregister #} db
 
-databaseUnregisterAll :: IO CInt
+databaseUnregisterAll :: IO Error
 databaseUnregisterAll =
-    {# call db_unregister_all #}
+    liftM (toEnum . fromIntegral) $
+        {# call db_unregister_all #}
 
 databaseGetName :: Database -> IO String
 databaseGetName db =
@@ -260,13 +264,15 @@ databaseGetUrl db =
     {# call alpm_db_get_url #} db
         >>= peekCString
 
-databaseSetServer :: Database -> String -> IO CInt
+databaseSetServer :: Database -> String -> IO Error
 databaseSetServer db url =
-    withCString url $ {# call db_setserver #} db
+    liftM (toEnum . fromIntegral) $
+        withCString url $ {# call db_setserver #} db
 
-databaseUpdate :: Database -> CInt -> IO CInt
+databaseUpdate :: Database -> CInt -> IO Error
 databaseUpdate db level =
-    {# call db_update #} level db
+    liftM (toEnum . fromIntegral) $
+        {# call db_update #} level db
 
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
