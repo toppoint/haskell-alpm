@@ -385,20 +385,53 @@ dbGetPKGCache db =
 -- pmpkg_t *alpm_find_satisfier(alpm_list_t *pkgs, const char *depstring);
 -- pmpkg_t *alpm_find_dbs_satisfier(alpm_list_t *dbs, const char *depstring);
 
--- const char *alpm_miss_get_target(const pmdepmissing_t *miss);
--- pmdepend_t *alpm_miss_get_dep(pmdepmissing_t *miss);
--- const char *alpm_miss_get_causingpkg(const pmdepmissing_t *miss);
+missGetTarget :: DependencyMissing -> IO String
+missGetTarget miss =
+    {# call miss_get_target #} miss
+        >>= peekCString
+
+missGetDependency :: DependencyMissing -> IO Dependency
+missGetDependency =
+    {# call miss_get_dep #}
+
+missGetCausingPackage :: DependencyMissing -> IO String
+missGetCausingPackage miss =
+    {# call miss_get_causingpkg #} miss
+        >>= peekCString
 
 -- alpm_list_t *alpm_checkconflicts(alpm_list_t *pkglist);
 
--- const char *alpm_conflict_get_package1(pmconflict_t *conflict);
--- const char *alpm_conflict_get_package2(pmconflict_t *conflict);
--- const char *alpm_conflict_get_reason(pmconflict_t *conflict);
+conflictGetPackage1 :: Conflict -> IO String
+conflictGetPackage1 conflict =
+    {# call conflict_get_package1 #} conflict
+        >>= peekCString
+
+conflictGetPackage2 :: Conflict -> IO String
+conflictGetPackage2 conflict =
+    {# call conflict_get_package2 #} conflict
+        >>= peekCString
+
+conflictGetReason :: Conflict -> IO String
+conflictGetReason conflict =
+    {# call conflict_get_reason #} conflict
+        >>= peekCString
 
 -- pmdepmod_t alpm_dep_get_mod(const pmdepend_t *dep);
--- const char *alpm_dep_get_name(const pmdepend_t *dep);
--- const char *alpm_dep_get_version(const pmdepend_t *dep);
--- char *alpm_dep_compute_string(const pmdepend_t *dep);
+
+dependencyGetName :: Dependency -> IO String
+dependencyGetName dependency =
+    {# call dep_get_name #} dependency
+        >>= peekCString
+
+dependencyGetVersion :: Dependency -> IO String
+dependencyGetVersion dependency =
+    {# call dep_get_version #} dependency
+        >>= peekCString
+
+dependencyComputeString :: Dependency -> IO String
+dependencyComputeString dependency =
+    {# call dep_compute_string #} dependency
+        >>= peekCString
 
 
 -- File conflicts ------------------------------------------------------------
