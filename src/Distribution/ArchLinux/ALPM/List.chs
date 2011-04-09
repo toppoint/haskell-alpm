@@ -34,24 +34,14 @@ alpm_list_t *alpm_list_reverse(alpm_list_t *list);
 
 addALPMList :: ALPMList -> String -> IO ALPMList
 addALPMList list str = 
--- alpm_list_t *alpm_list_add(alpm_list_t *list, void *data);
   {# call list_add #} list . castPtr =<< newCString str
 
 joinALPMList :: ALPMList -> ALPMList -> IO ALPMList
 joinALPMList lst1 lst2 =
--- alpm_list_t *alpm_list_join(alpm_list_t *first, alpm_list_t *second);
   {#call list_join #} lst1 lst2
 
 
 -- Item Accessors --------------------------------------------------------------
-
-{- /* item accessors */
-alpm_list_t *alpm_list_first(const alpm_list_t *list);
-alpm_list_t *alpm_list_nth(const alpm_list_t *list, size_t n);
-alpm_list_t *alpm_list_next(const alpm_list_t *list);
-alpm_list_t *alpm_list_last(const alpm_list_t *list);
-void *alpm_list_getdata(const alpm_list_t *entry);
--}
 
 firstALPMList :: ALPMList -> IO ALPMList
 firstALPMList list =

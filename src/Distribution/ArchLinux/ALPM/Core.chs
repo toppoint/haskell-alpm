@@ -8,9 +8,13 @@ where
 #include <alpm.h>
 
 {# import Distribution.ArchLinux.ALPM.Types #}
+{# import Distribution.ArchLinux.ALPM.List #}
 
 import Foreign.C
 import Foreign.Ptr
+import Foreign.Marshal.Utils (toBool, fromBool) 
+
+import Control.Monad (liftM)
 
 
 -- General ------------------------------------------------------------------
@@ -75,45 +79,132 @@ checkForNull unObj obj
 -- alpm_cb_totaldl alpm_option_get_totaldlcb(void);
 -- void alpm_option_set_totaldlcb(alpm_cb_totaldl cb);
 
--- const char *alpm_option_get_root(void);
--- int alpm_option_set_root(const char *root);
+optionGetRoot :: IO FilePath
+optionGetRoot = 
+  {# call option_get_root #} >>= peekCString
 
--- const char *alpm_option_get_dbpath(void);
--- int alpm_option_set_dbpath(const char *dbpath);
+optionSetRoot :: FilePath -> IO Error
+optionSetRoot fp = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_set_root #} =<< newCString fp
 
--- alpm_list_t *alpm_option_get_cachedirs(void);
--- int alpm_option_add_cachedir(const char *cachedir);
--- void alpm_option_set_cachedirs(alpm_list_t *cachedirs);
--- int alpm_option_remove_cachedir(const char *cachedir);
+optionGetDBPath :: IO FilePath
+optionGetDBPath = 
+  {# call option_get_dbpath #} >>= peekCString
 
--- const char *alpm_option_get_logfile(void);
--- int alpm_option_set_logfile(const char *logfile);
+optionSetDBPath :: FilePath -> IO Error
+optionSetDBPath fp = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_set_dbpath #} =<< newCString fp
 
--- const char *alpm_option_get_lockfile(void);
+optionGetCacheDirs :: IO ALPMList
+optionGetCacheDirs = 
+  {# call option_get_cachedirs #}
+
+optionAddCacheDir :: FilePath -> IO Error
+optionAddCacheDir fp = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_add_cachedir #} =<< newCString fp
+
+optionSetCacheDirs :: ALPMList -> IO ()
+optionSetCacheDirs list = 
+  {# call option_set_cachedirs #} $ list
+
+optionRemoveCacheDir :: String -> IO Error
+optionRemoveCacheDir str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_remove_cachedir #} =<< newCString str 
+
+optionGetLogFile :: IO String
+optionGetLogFile = 
+  {# call option_get_logfile #} >>= peekCString
+
+optionSetLogFile :: String -> IO Error
+optionSetLogFile str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_set_logfile #} =<< newCString str
+
+optionGetLockFile :: IO String
+optionGetLockFile = 
+  {# call option_get_lockfile #} >>= peekCString
+
 -- /* no set_lockfile, path is determined from dbpath */
 
--- int alpm_option_get_usesyslog(void);
--- void alpm_option_set_usesyslog(int usesyslog);
+optionGetUseSyslog :: IO Bool
+optionGetUseSyslog = 
+  liftM toBool $ {# call option_get_usesyslog #}
 
--- alpm_list_t *alpm_option_get_noupgrades(void);
--- void alpm_option_add_noupgrade(const char *pkg);
--- void alpm_option_set_noupgrades(alpm_list_t *noupgrade);
--- int alpm_option_remove_noupgrade(const char *pkg);
+optionSetUseSyslog :: Bool -> IO ()
+optionSetUseSyslog b = 
+  {# call option_set_usesyslog #} $ fromBool b 
 
--- alpm_list_t *alpm_option_get_noextracts(void);
--- void alpm_option_add_noextract(const char *pkg);
--- void alpm_option_set_noextracts(alpm_list_t *noextract);
--- int alpm_option_remove_noextract(const char *pkg);
+optionGetNoUpgrades :: IO ALPMList
+optionGetNoUpgrades = 
+  {# call option_get_noupgrades #}
 
--- alpm_list_t *alpm_option_get_ignorepkgs(void);
--- void alpm_option_add_ignorepkg(const char *pkg);
--- void alpm_option_set_ignorepkgs(alpm_list_t *ignorepkgs);
--- int alpm_option_remove_ignorepkg(const char *pkg);
+optionAddNoUpgrade :: String -> IO ()
+optionAddNoUpgrade pkg = 
+    {# call option_add_noupgrade #} =<< newCString pkg
 
--- alpm_list_t *alpm_option_get_ignoregrps(void);
--- void alpm_option_add_ignoregrp(const char *grp);
--- void alpm_option_set_ignoregrps(alpm_list_t *ignoregrps);
--- int alpm_option_remove_ignoregrp(const char *grp);
+optionSetNoUpgrades :: ALPMList -> IO ()
+optionSetNoUpgrades list = 
+  {# call option_set_noupgrades #} $ list
+
+optionRemoveNoUpgrade :: String -> IO Error
+optionRemoveNoUpgrade str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_remove_noupgrade #} =<< newCString str 
+
+optionGetNoExtracts :: IO ALPMList
+optionGetNoExtracts = 
+  {# call option_get_noextracts #}
+
+optionAddNoExtract :: String -> IO ()
+optionAddNoExtract pkg = 
+    {# call option_add_noextract #} =<< newCString pkg
+
+optionSetNoExtracts :: ALPMList -> IO ()
+optionSetNoExtracts list = 
+  {# call option_set_noextracts #} $ list
+
+optionRemoveNoExtract :: String -> IO Error
+optionRemoveNoExtract str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_remove_noextract #} =<< newCString str 
+
+optionGetIgnorePkgs :: IO ALPMList
+optionGetIgnorePkgs = 
+  {# call option_get_ignorepkgs #}
+
+optionAddIgnorePkg :: String -> IO ()
+optionAddIgnorePkg pkg = 
+    {# call option_add_ignorepkg #} =<< newCString pkg
+
+optionSetIgnorePkgs :: ALPMList -> IO ()
+optionSetIgnorePkgs list = 
+  {# call option_set_ignorepkgs #} $ list
+
+optionRemoveIgnorePkg :: String -> IO Error
+optionRemoveIgnorePkg str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_remove_ignorepkg #} =<< newCString str 
+
+optionGetIgnoreGrps :: IO ALPMList
+optionGetIgnoreGrps = 
+  {# call option_get_ignoregrps #}
+
+optionAddIgnoreGrp :: String -> IO ()
+optionAddIgnoreGrp pkg = 
+    {# call option_add_ignoregrp #} =<< newCString pkg
+
+optionSetIgnoreGrps :: ALPMList -> IO ()
+optionSetIgnoreGrps list = 
+  {# call option_set_ignoregrps #} $ list
+
+optionRemoveIgnoreGrp :: String -> IO Error
+optionRemoveIgnoreGrp str = 
+  liftM (toEnum . fromIntegral) $ 
+    {# call option_remove_ignoregrp #} =<< newCString str 
 
 optionGetArch :: IO String
 optionGetArch =
@@ -179,6 +270,10 @@ databaseUpdate db level =
 
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
+
+dbGetPKGCache :: Database -> IO ALPMList
+dbGetPKGCache db = 
+  {# call db_get_pkgcache #} db 
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
