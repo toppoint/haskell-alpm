@@ -217,21 +217,21 @@ optionSetArch :: String -> IO ()
 optionSetArch arch =
     withCString arch $ {# call option_set_arch #}
 
-optionGetUseDelta :: IO CInt
+optionGetUseDelta :: IO Bool
 optionGetUseDelta =
-    {# call option_get_usedelta #}
+    liftM toBool $ {# call option_get_usedelta #}
 
-optionSetUserDelta :: CInt -> IO ()
-optionSetUserDelta =
-    {# call option_set_usedelta #}
+optionSetUserDelta :: Bool -> IO ()
+optionSetUserDelta b =
+    {# call option_set_usedelta #} $ fromBool b
 
-optionGetCheckSpace :: IO CInt
+optionGetCheckSpace :: IO Bool
 optionGetCheckSpace =
-    {# call option_get_checkspace #}
+    liftM toBool $ {# call option_get_checkspace #}
 
-optionSetCheckSpace :: CInt -> IO ()
-optionSetCheckSpace =
-    {# call option_set_checkspace #}
+optionSetCheckSpace :: Bool -> IO ()
+optionSetCheckSpace b =
+    {# call option_set_checkspace #} $ fromBool b
 
 -- pmdb_t *alpm_option_get_localdb(void);
 -- alpm_list_t *alpm_option_get_syncdbs(void);
@@ -269,10 +269,10 @@ databaseSetServer db url =
     liftM (toEnum . fromIntegral) $
         withCString url $ {# call db_setserver #} db
 
-databaseUpdate :: Database -> CInt -> IO Error
+databaseUpdate :: Database -> LogLevel -> IO Error
 databaseUpdate db level =
     liftM (toEnum . fromIntegral) $
-        {# call db_update #} level db
+        {# call db_update #} (fromIntegral $ fromEnum level) db
 
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
@@ -416,9 +416,9 @@ computeMd5Sum name =
     withCString name {# call compute_md5sum #}
         >>= peekCString
 
-strError :: CInt -> IO String
+strError :: Error -> IO String
 strError err =
-    {# call strerror #} err
+    {# call strerror #} (fromIntegral $ fromEnum err)
         >>= peekCString
 
 strErrorLast :: IO String
