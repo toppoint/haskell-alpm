@@ -37,6 +37,7 @@ Library
     Exposed-Modules:
         Distribution.ArchLinux.ALPM.Types
         Distribution.ArchLinux.ALPM.Core
+        Distribution.ArchLinux.ALPM.List
 
     Extra-Libraries:
         alpm
