@@ -10,6 +10,9 @@ module Distribution.ArchLinux.ALPM.List where
 
 {# import Distribution.ArchLinux.ALPM.Types #}
 
+
+import Control.Monad
+
 import Foreign
 import Foreign.C
 
@@ -62,17 +65,21 @@ alpm_list_t *alpm_list_msort(alpm_list_t *list, size_t n, alpm_list_fn_cmp fn);
 alpm_list_t *alpm_list_remove_item(alpm_list_t *haystack, alpm_list_t *item);
 alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn, void **data);
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
-alpm_list_t *alpm_list_remove_dupes(const alpm_list_t *list);
-alpm_list_t *alpm_list_strdup(const alpm_list_t *list);
 -}
+
+removeDupesALPMList :: ALPMList -> IO ALPMList 
+removeDupesALPMList = {# call list_remove_dupes #}
+
+strdupALPMList :: ALPMList -> IO ALPMList 
+strdupALPMList = {#call list_strdup #}
 
 copyALPMList :: ALPMList -> IO ALPMList
 copyALPMList = {# call list_copy #} 
 
-{-
-alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
-alpm_list_t *alpm_list_reverse(alpm_list_t *list);
--}
+-- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
+
+reverseALPMList :: ALPMList -> IO ALPMList
+reverseALPMList = {# call list_reverse #}
 
 
 -- Item Accessors -------------------------------------------------------------
@@ -99,9 +106,12 @@ getDataALPMList lst =
 
 
 -- Misc -----------------------------------------------------------------------
+
+countALPMList :: ALPMList -> IO Int
+countALPMList lst = 
+  liftM fromIntegral $ {# call list_count#} lst 
+
 {-
-/* misc */
-size_t alpm_list_count(const alpm_list_t *list);
 void *alpm_list_find(const alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn);
 void *alpm_list_find_ptr(const alpm_list_t *haystack, const void *needle);
 char *alpm_list_find_str(const alpm_list_t *haystack, const char *needle);
