@@ -15,8 +15,6 @@ import Foreign.C
 
 newtype ALPMList a = ALPMList (Ptr (ALPMList a))
 
-{# pointer *alpm_list_t as ALPMList newtype  nocode#}
-
 unALPMList :: ALPMList a -> Ptr (ALPMList a)
 unALPMList (ALPMList ptr) = ptr 
 

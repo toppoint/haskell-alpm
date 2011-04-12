@@ -99,18 +99,19 @@ optionSetDBPath fp =
   liftM (toEnum . fromIntegral) $ 
     {# call option_set_dbpath #} =<< newCString fp
 
-optionGetCacheDirs :: IO ALPMList
+optionGetCacheDirs :: IO (ALPMList a)
 optionGetCacheDirs = 
-  {# call option_get_cachedirs #}
+  liftM (ALPMList . castPtr) $ {# call option_get_cachedirs #}
 
 optionAddCacheDir :: FilePath -> IO Error
 optionAddCacheDir fp = 
   liftM (toEnum . fromIntegral) $ 
     {# call option_add_cachedir #} =<< newCString fp
 
-optionSetCacheDirs :: ALPMList -> IO ()
-optionSetCacheDirs list = 
-  {# call option_set_cachedirs #} $ list
+optionSetCacheDirs :: ALPMList a -> IO ()
+optionSetCacheDirs = 
+  {# call option_set_cachedirs #} . castPtr . unALPMList
+
 
 optionRemoveCacheDir :: String -> IO Error
 optionRemoveCacheDir str = 
@@ -140,68 +141,71 @@ optionSetUseSyslog :: Bool -> IO ()
 optionSetUseSyslog b = 
   {# call option_set_usesyslog #} $ fromBool b 
 
-optionGetNoUpgrades :: IO ALPMList
+optionGetNoUpgrades :: IO (ALPMList a)
 optionGetNoUpgrades = 
-  {# call option_get_noupgrades #}
+  liftM (ALPMList . castPtr) $ {# call option_get_noupgrades #}
+
 
 optionAddNoUpgrade :: String -> IO ()
 optionAddNoUpgrade pkg = 
     {# call option_add_noupgrade #} =<< newCString pkg
 
-optionSetNoUpgrades :: ALPMList -> IO ()
-optionSetNoUpgrades list = 
-  {# call option_set_noupgrades #} $ list
+optionSetNoUpgrades :: (ALPMList a) -> IO ()
+optionSetNoUpgrades = 
+  {# call option_set_noupgrades #} . castPtr . unALPMList 
 
 optionRemoveNoUpgrade :: String -> IO Error
 optionRemoveNoUpgrade str = 
   liftM (toEnum . fromIntegral) $ 
     {# call option_remove_noupgrade #} =<< newCString str 
 
-optionGetNoExtracts :: IO ALPMList
+optionGetNoExtracts :: IO (ALPMList a)
 optionGetNoExtracts = 
-  {# call option_get_noextracts #}
+  liftM (ALPMList . castPtr) $ {# call option_get_noextracts #}
 
 optionAddNoExtract :: String -> IO ()
 optionAddNoExtract pkg = 
     {# call option_add_noextract #} =<< newCString pkg
 
-optionSetNoExtracts :: ALPMList -> IO ()
-optionSetNoExtracts list = 
-  {# call option_set_noextracts #} $ list
+optionSetNoExtracts :: ALPMList a -> IO ()
+optionSetNoExtracts = 
+  {# call option_set_noextracts #} . castPtr . unALPMList 
 
 optionRemoveNoExtract :: String -> IO Error
 optionRemoveNoExtract str = 
   liftM (toEnum . fromIntegral) $ 
     {# call option_remove_noextract #} =<< newCString str 
 
-optionGetIgnorePkgs :: IO ALPMList
+optionGetIgnorePkgs :: IO (ALPMList a)
 optionGetIgnorePkgs = 
-  {# call option_get_ignorepkgs #}
+  liftM (ALPMList . castPtr) $
+     {# call option_get_ignorepkgs #}
 
 optionAddIgnorePkg :: String -> IO ()
 optionAddIgnorePkg pkg = 
     {# call option_add_ignorepkg #} =<< newCString pkg
 
-optionSetIgnorePkgs :: ALPMList -> IO ()
-optionSetIgnorePkgs list = 
-  {# call option_set_ignorepkgs #} $ list
+optionSetIgnorePkgs :: ALPMList a -> IO ()
+optionSetIgnorePkgs = 
+  {# call option_set_ignorepkgs #} . castPtr . unALPMList
 
 optionRemoveIgnorePkg :: String -> IO Error
 optionRemoveIgnorePkg str = 
   liftM (toEnum . fromIntegral) $ 
     {# call option_remove_ignorepkg #} =<< newCString str 
 
-optionGetIgnoreGrps :: IO ALPMList
+optionGetIgnoreGrps :: IO (ALPMList a)
 optionGetIgnoreGrps = 
-  {# call option_get_ignoregrps #}
+  liftM (ALPMList . castPtr) $
+    {# call option_get_ignoregrps #}
 
 optionAddIgnoreGrp :: String -> IO ()
 optionAddIgnoreGrp pkg = 
     {# call option_add_ignoregrp #} =<< newCString pkg
 
-optionSetIgnoreGrps :: ALPMList -> IO ()
-optionSetIgnoreGrps list = 
-  {# call option_set_ignoregrps #} $ list
+optionSetIgnoreGrps :: (ALPMList a) -> IO ()
+optionSetIgnoreGrps = 
+  {# call option_set_ignoregrps #} . castPtr . unALPMList
 
 optionRemoveIgnoreGrp :: String -> IO Error
 optionRemoveIgnoreGrp str = 
@@ -233,8 +237,11 @@ optionSetCheckSpace :: Bool -> IO ()
 optionSetCheckSpace b =
     {# call option_set_checkspace #} $ fromBool b
 
+
+-- db.h
 -- pmdb_t *alpm_option_get_localdb(void);
 -- alpm_list_t *alpm_option_get_syncdbs(void);
+
 
 
 -- Database ------------------------------------------------------------------
@@ -242,7 +249,7 @@ optionSetCheckSpace b =
 databaseRegisterSync :: String -> IO (Maybe Database)
 databaseRegisterSync treeName = do
     db <- withCString treeName $ {# call db_register_sync #}
-    return $ checkForNull unDatabase db
+    return $ checkForNull unpack db
 
 databaseUnregister :: Database -> IO Error
 databaseUnregister db =
@@ -277,9 +284,9 @@ databaseUpdate db level =
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
 
-dbGetPKGCache :: Database -> IO ALPMList
+dbGetPKGCache :: Database -> IO (ALPMList a)
 dbGetPKGCache db = 
-  {# call db_get_pkgcache #} db 
+  liftM (ALPMList . castPtr) $ {# call db_get_pkgcache #} db 
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
