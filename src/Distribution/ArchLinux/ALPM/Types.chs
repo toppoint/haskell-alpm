@@ -4,10 +4,11 @@
 
 module Distribution.ArchLinux.ALPM.Types
     ( 
-      -- * Types
-      Database
-    , unDatabase
+      -- * ArchLinux Package Managment Type Class
+      ALPMType (..)
 
+      -- * Types
+    , Database
     , Package
     , Delta
     , Group
@@ -16,7 +17,6 @@ module Distribution.ArchLinux.ALPM.Types
     , DependencyMissing
     , Conflict
     , FileConflict
-
 
       -- * Enums
     , LogLevel (..)
@@ -35,16 +35,28 @@ where
 
 import Foreign
 
+-- Packable Type -------------------------------------------------------------
+
+class ALPMType a where
+  unpack :: a -> Ptr a
+  pack   :: Ptr a -> a 
+
 -- Types ---------------------------------------------------------------------
 
 {# pointer *pmdb_t as Database newtype #}
 
-unDatabase :: Database -> Ptr Database
-unDatabase (Database ptr) = ptr
+instance ALPMType Database where
+  unpack (Database ptr) = ptr
 
 {# pointer *pmpkg_t as Package newtype #}
 
+instance ALPMType Package where
+  unpack (Package ptr) = ptr
+
 {# pointer *pmdelta_t as Delta newtype #}
+
+instance ALPMType Delta where
+  unpack (Delta ptr) = ptr
 
 {# pointer *pmgrp_t as Group newtype #}
 
