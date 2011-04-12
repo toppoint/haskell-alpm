@@ -9,6 +9,7 @@ module Distribution.ArchLinux.ALPM.List where
 
 {# import Distribution.ArchLinux.ALPM.Types #}
 
+import Control.Monad
 
 import Foreign
 import Foreign.C
@@ -35,27 +36,27 @@ alpmListSortWrapper f c1 c2 =
 
 -- List Mutaters --------------------------------------------------------------
 
-addALPMList :: ALPMType a =>  ALPMList a -> a -> ALPMList a
+addALPMList :: ALPMType a =>  ALPMList a -> a -> IO (ALPMList a)
 addALPMList list ptr = 
-  ALPMList $ 
+  liftM ALPMList $ 
     alpm_list_add (unALPMList list) (unpack ptr)
 
-joinALPMList :: ALPMList a -> ALPMList a -> ALPMList a
+joinALPMList :: ALPMList a -> ALPMList a -> IO (ALPMList a)
 joinALPMList lst1 lst2 =
-  ALPMList $
+  liftM ALPMList $
     alpm_list_join (unALPMList lst1) (unALPMList lst2)
 
-addSortedALPMList :: ALPMType a => ALPMList a -> a -> ALPMListSort a -> ALPMList a
-addSortedALPMList list dat sort = unsafePerformIO $ do
+addSortedALPMList :: ALPMType a => ALPMList a -> a -> ALPMListSort a -> IO (ALPMList a)
+addSortedALPMList list dat sort = do
   csort <- mkALPMListSort (alpmListSortWrapper sort)
-  newList <- return .  ALPMList $ alpm_list_add_sorted (unALPMList list) (unpack dat) csort 
+  newList <- liftM ALPMList $ alpm_list_add_sorted (unALPMList list) (unpack dat) csort 
   freeHaskellFunPtr csort
   return newList 
 
-mergeALPMList :: ALPMType a => ALPMList a -> ALPMList a -> ALPMListSort a -> ALPMList a 
-mergeALPMList lst1 lst2 sort = unsafePerformIO $ do
+mergeALPMList :: ALPMType a => ALPMList a -> ALPMList a -> ALPMListSort a -> IO (ALPMList a)
+mergeALPMList lst1 lst2 sort = do
   csort <- mkALPMListSort (alpmListSortWrapper sort)
-  newList <- return . ALPMList $ alpm_list_mmerge (unALPMList lst1) (unALPMList lst2) csort
+  newList <- liftM ALPMList $ alpm_list_mmerge (unALPMList lst1) (unALPMList lst2) csort
   freeHaskellFunPtr csort
   return newList 
 
@@ -67,43 +68,43 @@ alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_li
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
 
-removeDupesALPMList :: ALPMList a -> ALPMList a
-removeDupesALPMList = ALPMList . alpm_list_remove_dupes . unALPMList
+removeDupesALPMList :: ALPMList a -> IO (ALPMList a)
+removeDupesALPMList = liftM ALPMList . alpm_list_remove_dupes . unALPMList
 
-strdupALPMList :: ALPMList a -> ALPMList a
-strdupALPMList = ALPMList . alpm_list_strdup . unALPMList
+strdupALPMList :: ALPMList a -> IO (ALPMList a)
+strdupALPMList = liftM ALPMList . alpm_list_strdup . unALPMList
 
-copyALPMList :: ALPMList a -> ALPMList a
-copyALPMList =  ALPMList . alpm_list_copy . unALPMList
+copyALPMList :: ALPMList a -> IO (ALPMList a)
+copyALPMList =  liftM ALPMList . alpm_list_copy . unALPMList
 
 -- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
 
-reverseALPMList :: ALPMList a -> ALPMList a
-reverseALPMList = ALPMList . alpm_list_reverse . unALPMList
+reverseALPMList :: ALPMList a -> IO (ALPMList a)
+reverseALPMList = liftM ALPMList . alpm_list_reverse . unALPMList
 
 
 -- Item Accessors -------------------------------------------------------------
 
-firstALPMList :: ALPMList a -> ALPMList a
-firstALPMList = ALPMList . alpm_list_first . unALPMList
+firstALPMList :: ALPMList a -> IO (ALPMList a)
+firstALPMList = liftM ALPMList . alpm_list_first . unALPMList
 
-nthALPMList :: ALPMList a -> Int -> ALPMList a
-nthALPMList lst n = ALPMList $
+nthALPMList :: ALPMList a -> Int -> IO (ALPMList a)
+nthALPMList lst n = liftM ALPMList $
   alpm_list_nth (unALPMList lst) (fromIntegral n)
 
-nextALPMList :: ALPMList a -> ALPMList a
-nextALPMList = ALPMList . alpm_list_next . unALPMList
+nextALPMList :: ALPMList a -> IO (ALPMList a)
+nextALPMList = liftM ALPMList . alpm_list_next . unALPMList
 
-lastALPMList :: ALPMList a -> ALPMList a
-lastALPMList = ALPMList . alpm_list_last . unALPMList
+lastALPMList :: ALPMList a -> IO (ALPMList a)
+lastALPMList = liftM ALPMList . alpm_list_last . unALPMList
 
-getDataALPMList :: ALPMType a => ALPMList a -> a
-getDataALPMList = pack . alpm_list_getdata . unALPMList
+getDataALPMList :: ALPMType a => ALPMList a -> IO a
+getDataALPMList = liftM pack . alpm_list_getdata . unALPMList
 
 -- Misc -----------------------------------------------------------------------
 
-countALPMList :: ALPMList a -> Int
-countALPMList = fromIntegral . alpm_list_count . unALPMList
+countALPMList :: ALPMList a -> IO Int
+countALPMList = liftM fromIntegral . alpm_list_count . unALPMList
 
 {-
 void *alpm_list_find(const alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn);
@@ -115,45 +116,45 @@ void alpm_list_diff_sorted(const alpm_list_t *left, const alpm_list_t *right,
 -}
 
 foreign import ccall safe "alpm_list.h alpm_list_add"
-  alpm_list_add :: Ptr (ALPMList a) -> Ptr a -> Ptr (ALPMList a)
+  alpm_list_add :: Ptr (ALPMList a) -> Ptr a -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_join"
-  alpm_list_join :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_join :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_add_sorted"
-  alpm_list_add_sorted :: Ptr (ALPMList a) -> Ptr a -> FunPtr (Ptr a -> Ptr a -> CInt) -> Ptr (ALPMList a)
+  alpm_list_add_sorted :: Ptr (ALPMList a) -> Ptr a -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_mmerge"
-  alpm_list_mmerge :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> FunPtr (Ptr a -> Ptr a -> CInt) -> Ptr (ALPMList a)
+  alpm_list_mmerge :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_remove_dupes"
-  alpm_list_remove_dupes :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_remove_dupes :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_strdup"
-  alpm_list_strdup :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_strdup :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_copy" 
-  alpm_list_copy :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_copy :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 -- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
 
 foreign import ccall safe "alpm_list.h alpm_list_reverse" 
-  alpm_list_reverse :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_reverse :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_first" 
-  alpm_list_first :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_first :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_next" 
-  alpm_list_next :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_next :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_last" 
-  alpm_list_last :: Ptr (ALPMList a) -> Ptr (ALPMList a)
+  alpm_list_last :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_nth" 
-  alpm_list_nth :: Ptr (ALPMList a) -> CInt ->  Ptr (ALPMList a)
+  alpm_list_nth :: Ptr (ALPMList a) -> CInt -> IO (Ptr (ALPMList a))
 
 foreign import ccall safe "alpm_list.h alpm_list_getdata" 
-  alpm_list_getdata :: Ptr (ALPMList a) -> Ptr a
+  alpm_list_getdata :: Ptr (ALPMList a) -> IO (Ptr a)
 
 foreign import ccall safe "alpm_list.h alpm_list_count" 
-  alpm_list_count :: Ptr (ALPMList a) -> CInt 
+  alpm_list_count :: Ptr (ALPMList a) -> IO  CInt 
