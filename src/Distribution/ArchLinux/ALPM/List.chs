@@ -60,10 +60,20 @@ mergeALPMList lst1 lst2 sort = do
   freeHaskellFunPtr csort
   return newList 
 
+-- Item Mutators -------------------------------------------------------------
+
+msortALPMList :: ALPMType a => ALPMList a -> Int -> ALPMListSort a -> IO (ALPMList a)
+msortALPMList list n sort = do
+  csort <- mkALPMListSort (alpmListSortWrapper sort)
+  newList <- liftM ALPMList $ alpm_list_msort (unALPMList list) (fromIntegral n) csort
+  freeHaskellFunPtr csort
+  return newList 
+
+removeItemALPMList :: ALPMList a -> ALPMList a -> IO (ALPMList a)
+removeItemALPMList lst1 lst2 = do
+  liftM ALPMList $ alpm_list_remove_item (unALPMList lst1) (unALPMList lst2)
+
 {-
-/* item mutators */
-alpm_list_t *alpm_list_msort(alpm_list_t *list, size_t n, alpm_list_fn_cmp fn);
-alpm_list_t *alpm_list_remove_item(alpm_list_t *haystack, alpm_list_t *item);
 alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn, void **data);
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
@@ -136,8 +146,6 @@ foreign import ccall safe "alpm_list.h alpm_list_strdup"
 foreign import ccall safe "alpm_list.h alpm_list_copy" 
   alpm_list_copy :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
--- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
-
 foreign import ccall safe "alpm_list.h alpm_list_reverse" 
   alpm_list_reverse :: Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
 
@@ -158,3 +166,9 @@ foreign import ccall safe "alpm_list.h alpm_list_getdata"
 
 foreign import ccall safe "alpm_list.h alpm_list_count" 
   alpm_list_count :: Ptr (ALPMList a) -> IO  CInt 
+
+foreign import ccall safe "alpm_list.h alpm_list_msort" 
+  alpm_list_msort :: Ptr (ALPMList a) -> CInt -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (ALPMList a))
+
+foreign import ccall safe "alpm_list.h alpm_list_remove_item" 
+  alpm_list_remove_item :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
