@@ -20,16 +20,16 @@ import Control.Monad (liftM)
 -- General ------------------------------------------------------------------
 
 -- | This function needs to be called first or nothing else will work.
-initialize :: IO Error
+initialize :: IO (Maybe Error)
 initialize =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         {# call initialize #}
 
 -- | Call this function to clean up. After this the library is no longer
 -- available
-release :: IO Error
+release :: IO (Maybe Error)
 release =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         {# call release #}
 
 -- | Get ALPM's version.
@@ -42,6 +42,11 @@ checkForNull :: (a -> Ptr a) -> a -> Maybe a
 checkForNull unObj obj
   | unObj obj == nullPtr = Nothing
   | otherwise            = Just obj
+
+maybeToEnum :: Enum a => Int -> Maybe a
+maybeToEnum n
+  | n == 0    = Nothing
+  | otherwise = Just $ toEnum n
 
 
 -- Logging -------------------------------------------------------------------
@@ -85,27 +90,27 @@ optionGetRoot :: IO FilePath
 optionGetRoot = 
   {# call option_get_root #} >>= peekCString
 
-optionSetRoot :: FilePath -> IO Error
+optionSetRoot :: FilePath -> IO (Maybe Error)
 optionSetRoot fp = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_set_root #} =<< newCString fp
 
 optionGetDBPath :: IO FilePath
 optionGetDBPath = 
   {# call option_get_dbpath #} >>= peekCString
 
-optionSetDBPath :: FilePath -> IO Error
+optionSetDBPath :: FilePath -> IO (Maybe Error)
 optionSetDBPath fp = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_set_dbpath #} =<< newCString fp
 
 optionGetCacheDirs :: IO (ALPMList a)
 optionGetCacheDirs = 
   liftM (ALPMList . castPtr) $ {# call option_get_cachedirs #}
 
-optionAddCacheDir :: FilePath -> IO Error
+optionAddCacheDir :: FilePath -> IO (Maybe Error)
 optionAddCacheDir fp = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_add_cachedir #} =<< newCString fp
 
 optionSetCacheDirs :: ALPMList a -> IO ()
@@ -113,18 +118,18 @@ optionSetCacheDirs =
   {# call option_set_cachedirs #} . castPtr . unALPMList
 
 
-optionRemoveCacheDir :: String -> IO Error
+optionRemoveCacheDir :: String -> IO (Maybe Error)
 optionRemoveCacheDir str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_cachedir #} =<< newCString str 
 
 optionGetLogFile :: IO String
 optionGetLogFile = 
   {# call option_get_logfile #} >>= peekCString
 
-optionSetLogFile :: String -> IO Error
+optionSetLogFile :: String -> IO (Maybe Error)
 optionSetLogFile str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_set_logfile #} =<< newCString str
 
 optionGetLockFile :: IO String
@@ -154,9 +159,9 @@ optionSetNoUpgrades :: (ALPMList a) -> IO ()
 optionSetNoUpgrades = 
   {# call option_set_noupgrades #} . castPtr . unALPMList 
 
-optionRemoveNoUpgrade :: String -> IO Error
+optionRemoveNoUpgrade :: String -> IO (Maybe Error)
 optionRemoveNoUpgrade str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_noupgrade #} =<< newCString str 
 
 optionGetNoExtracts :: IO (ALPMList a)
@@ -171,9 +176,9 @@ optionSetNoExtracts :: ALPMList a -> IO ()
 optionSetNoExtracts = 
   {# call option_set_noextracts #} . castPtr . unALPMList 
 
-optionRemoveNoExtract :: String -> IO Error
+optionRemoveNoExtract :: String -> IO (Maybe Error)
 optionRemoveNoExtract str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_noextract #} =<< newCString str 
 
 optionGetIgnorePkgs :: IO (ALPMList a)
@@ -189,9 +194,9 @@ optionSetIgnorePkgs :: ALPMList a -> IO ()
 optionSetIgnorePkgs = 
   {# call option_set_ignorepkgs #} . castPtr . unALPMList
 
-optionRemoveIgnorePkg :: String -> IO Error
+optionRemoveIgnorePkg :: String -> IO (Maybe Error)
 optionRemoveIgnorePkg str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_ignorepkg #} =<< newCString str 
 
 optionGetIgnoreGrps :: IO (ALPMList a)
@@ -207,9 +212,9 @@ optionSetIgnoreGrps :: (ALPMList a) -> IO ()
 optionSetIgnoreGrps = 
   {# call option_set_ignoregrps #} . castPtr . unALPMList
 
-optionRemoveIgnoreGrp :: String -> IO Error
+optionRemoveIgnoreGrp :: String -> IO (Maybe Error)
 optionRemoveIgnoreGrp str = 
-  liftM (toEnum . fromIntegral) $ 
+  liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_ignoregrp #} =<< newCString str 
 
 optionGetArch :: IO String
@@ -251,14 +256,14 @@ databaseRegisterSync treeName = do
     db <- withCString treeName $ {# call db_register_sync #}
     return $ checkForNull unpack db
 
-databaseUnregister :: Database -> IO Error
+databaseUnregister :: Database -> IO (Maybe Error)
 databaseUnregister db =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         {# call db_unregister #} db
 
-databaseUnregisterAll :: IO Error
+databaseUnregisterAll :: IO (Maybe Error)
 databaseUnregisterAll =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         {# call db_unregister_all #}
 
 databaseGetName :: Database -> IO String
@@ -271,14 +276,14 @@ databaseGetUrl db =
     {# call alpm_db_get_url #} db
         >>= peekCString
 
-databaseSetServer :: Database -> String -> IO Error
+databaseSetServer :: Database -> String -> IO (Maybe Error)
 databaseSetServer db url =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         withCString url $ {# call db_setserver #} db
 
-databaseUpdate :: Database -> LogLevel -> IO Error
+databaseUpdate :: Database -> LogLevel -> IO (Maybe Error)
 databaseUpdate db level =
-    liftM (toEnum . fromIntegral) $
+    liftM (maybeToEnum . fromIntegral) $
         {# call db_update #} (fromIntegral $ fromEnum level) db
 
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
