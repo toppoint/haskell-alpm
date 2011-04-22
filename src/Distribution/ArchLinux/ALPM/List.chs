@@ -25,12 +25,12 @@ unALPMList (ALPMList ptr) = ptr
 
 -- Generic Function Bindings --------------------------------------------------
 
-type ALPMListSort a = a -> a -> Int 
+type ALPMListSort a b = a -> b -> Int 
 foreign import ccall "wrapper" 
-  mkALPMListSort :: (Ptr a -> Ptr a -> CInt) 
-                 -> IO (FunPtr (Ptr a -> Ptr a -> CInt))
+  mkALPMListSort :: (Ptr a -> Ptr b -> CInt) 
+                 -> IO (FunPtr (Ptr a -> Ptr b -> CInt))
 
-alpmListSortWrapper :: ALPMType a => ALPMListSort a -> Ptr a -> Ptr a -> CInt
+alpmListSortWrapper :: (ALPMType a,ALPMType b) => ALPMListSort a b -> Ptr a -> Ptr b -> CInt
 alpmListSortWrapper f c1 c2 =
   fromIntegral $ f (pack c1) (pack c2)
 
@@ -46,14 +46,14 @@ joinALPMList lst1 lst2 =
   liftM ALPMList $
     alpm_list_join (unALPMList lst1) (unALPMList lst2)
 
-addSortedALPMList :: ALPMType a => ALPMList a -> a -> ALPMListSort a -> IO (ALPMList a)
+addSortedALPMList :: ALPMType a => ALPMList a -> a -> ALPMListSort a a -> IO (ALPMList a)
 addSortedALPMList list dat sort = do
   csort <- mkALPMListSort (alpmListSortWrapper sort)
   newList <- liftM ALPMList $ alpm_list_add_sorted (unALPMList list) (unpack dat) csort 
   freeHaskellFunPtr csort
   return newList 
 
-mergeALPMList :: ALPMType a => ALPMList a -> ALPMList a -> ALPMListSort a -> IO (ALPMList a)
+mergeALPMList :: ALPMType a => ALPMList a -> ALPMList a -> ALPMListSort a a -> IO (ALPMList a)
 mergeALPMList lst1 lst2 sort = do
   csort <- mkALPMListSort (alpmListSortWrapper sort)
   newList <- liftM ALPMList $ alpm_list_mmerge (unALPMList lst1) (unALPMList lst2) csort
@@ -62,7 +62,7 @@ mergeALPMList lst1 lst2 sort = do
 
 -- Item Mutators -------------------------------------------------------------
 
-msortALPMList :: ALPMType a => ALPMList a -> Int -> ALPMListSort a -> IO (ALPMList a)
+msortALPMList :: ALPMType a => ALPMList a -> Int -> ALPMListSort a a -> IO (ALPMList a)
 msortALPMList list n sort = do
   csort <- mkALPMListSort (alpmListSortWrapper sort)
   newList <- liftM ALPMList $ alpm_list_msort (unALPMList list) (fromIntegral n) csort
