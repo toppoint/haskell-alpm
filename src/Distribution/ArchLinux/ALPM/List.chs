@@ -81,6 +81,7 @@ removeALPMList lst needle sort = do
     freeHaskellFunPtr csort
     ptr <- liftM castPtr $ peek dataPtr
     return (pack ptr,newList)
+
 {-
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
@@ -94,6 +95,8 @@ strdupALPMList = liftM ALPMList . alpm_list_strdup . unALPMList
 copyALPMList :: ALPMList a -> IO (ALPMList a)
 copyALPMList =  liftM ALPMList . alpm_list_copy . unALPMList
 
+-- Do we really need this function, for this the type parameter of ALPMList
+-- should be an instance of Storable   
 -- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
 
 reverseALPMList :: ALPMList a -> IO (ALPMList a)
@@ -123,8 +126,15 @@ getDataALPMList = liftM pack . alpm_list_getdata . unALPMList
 countALPMList :: ALPMList a -> IO Int
 countALPMList = liftM fromIntegral . alpm_list_count . unALPMList
 
+findALPMList :: (ALPMType a,ALPMType b) => ALPMList a -> b -> ALPMListSort a b -> IO (Maybe a)
+findALPMList list needle sort = do
+  csort <- mkALPMListSort (alpmListSortWrapper sort)
+  needleData <- alpm_list_find (unALPMList list) (unpack needle) csort
+  if needleData == nullPtr 
+    then return Nothing
+    else return .Just $ pack needleData
+
 {-
-void *alpm_list_find(const alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn);
 void *alpm_list_find_ptr(const alpm_list_t *haystack, const void *needle);
 char *alpm_list_find_str(const alpm_list_t *haystack, const char *needle);
 alpm_list_t *alpm_list_diff(const alpm_list_t *lhs, const alpm_list_t *rhs, alpm_list_fn_cmp fn);
@@ -183,3 +193,7 @@ foreign import ccall safe "alpm_list.h alpm_list_remove_item"
 --alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn, void **data);
 foreign import ccall safe "alpm_list.h alpm_list_remove"
   alpm_list_remove :: Ptr (ALPMList a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> CInt) -> Ptr (Ptr a) -> IO (Ptr (ALPMList a))
+
+--void *alpm_list_find(const alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn);
+foreign import ccall safe "alpm_list.h alpm_list_find"
+  alpm_list_find :: Ptr (ALPMList a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> CInt) -> IO (Ptr a)
