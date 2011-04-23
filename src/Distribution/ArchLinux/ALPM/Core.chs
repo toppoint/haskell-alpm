@@ -104,18 +104,18 @@ optionSetDBPath fp =
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_set_dbpath #} =<< newCString fp
 
-optionGetCacheDirs :: IO (ALPMList a)
+optionGetCacheDirs :: IO (List a)
 optionGetCacheDirs = 
-  liftM (ALPMList . castPtr) $ {# call option_get_cachedirs #}
+  liftM (List . castPtr) $ {# call option_get_cachedirs #}
 
 optionAddCacheDir :: FilePath -> IO (Maybe Error)
 optionAddCacheDir fp = 
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_add_cachedir #} =<< newCString fp
 
-optionSetCacheDirs :: ALPMList a -> IO ()
+optionSetCacheDirs :: List a -> IO ()
 optionSetCacheDirs = 
-  {# call option_set_cachedirs #} . castPtr . unALPMList
+  {# call option_set_cachedirs #} . castPtr . unList
 
 
 optionRemoveCacheDir :: String -> IO (Maybe Error)
@@ -146,71 +146,71 @@ optionSetUseSyslog :: Bool -> IO ()
 optionSetUseSyslog b = 
   {# call option_set_usesyslog #} $ fromBool b 
 
-optionGetNoUpgrades :: IO (ALPMList a)
+optionGetNoUpgrades :: IO (List a)
 optionGetNoUpgrades = 
-  liftM (ALPMList . castPtr) $ {# call option_get_noupgrades #}
+  liftM (List . castPtr) $ {# call option_get_noupgrades #}
 
 
 optionAddNoUpgrade :: String -> IO ()
 optionAddNoUpgrade pkg = 
     {# call option_add_noupgrade #} =<< newCString pkg
 
-optionSetNoUpgrades :: (ALPMList a) -> IO ()
+optionSetNoUpgrades :: (List a) -> IO ()
 optionSetNoUpgrades = 
-  {# call option_set_noupgrades #} . castPtr . unALPMList 
+  {# call option_set_noupgrades #} . castPtr . unList 
 
 optionRemoveNoUpgrade :: String -> IO (Maybe Error)
 optionRemoveNoUpgrade str = 
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_noupgrade #} =<< newCString str 
 
-optionGetNoExtracts :: IO (ALPMList a)
+optionGetNoExtracts :: IO (List a)
 optionGetNoExtracts = 
-  liftM (ALPMList . castPtr) $ {# call option_get_noextracts #}
+  liftM (List . castPtr) $ {# call option_get_noextracts #}
 
 optionAddNoExtract :: String -> IO ()
 optionAddNoExtract pkg = 
     {# call option_add_noextract #} =<< newCString pkg
 
-optionSetNoExtracts :: ALPMList a -> IO ()
+optionSetNoExtracts :: List a -> IO ()
 optionSetNoExtracts = 
-  {# call option_set_noextracts #} . castPtr . unALPMList 
+  {# call option_set_noextracts #} . castPtr . unList 
 
 optionRemoveNoExtract :: String -> IO (Maybe Error)
 optionRemoveNoExtract str = 
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_noextract #} =<< newCString str 
 
-optionGetIgnorePkgs :: IO (ALPMList a)
+optionGetIgnorePkgs :: IO (List a)
 optionGetIgnorePkgs = 
-  liftM (ALPMList . castPtr) $
+  liftM (List . castPtr) $
      {# call option_get_ignorepkgs #}
 
 optionAddIgnorePkg :: String -> IO ()
 optionAddIgnorePkg pkg = 
     {# call option_add_ignorepkg #} =<< newCString pkg
 
-optionSetIgnorePkgs :: ALPMList a -> IO ()
+optionSetIgnorePkgs :: List a -> IO ()
 optionSetIgnorePkgs = 
-  {# call option_set_ignorepkgs #} . castPtr . unALPMList
+  {# call option_set_ignorepkgs #} . castPtr . unList
 
 optionRemoveIgnorePkg :: String -> IO (Maybe Error)
 optionRemoveIgnorePkg str = 
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_ignorepkg #} =<< newCString str 
 
-optionGetIgnoreGrps :: IO (ALPMList a)
+optionGetIgnoreGrps :: IO (List a)
 optionGetIgnoreGrps = 
-  liftM (ALPMList . castPtr) $
+  liftM (List . castPtr) $
     {# call option_get_ignoregrps #}
 
 optionAddIgnoreGrp :: String -> IO ()
 optionAddIgnoreGrp pkg = 
     {# call option_add_ignoregrp #} =<< newCString pkg
 
-optionSetIgnoreGrps :: (ALPMList a) -> IO ()
+optionSetIgnoreGrps :: (List a) -> IO ()
 optionSetIgnoreGrps = 
-  {# call option_set_ignoregrps #} . castPtr . unALPMList
+  {# call option_set_ignoregrps #} . castPtr . unList
 
 optionRemoveIgnoreGrp :: String -> IO (Maybe Error)
 optionRemoveIgnoreGrp str = 
@@ -289,9 +289,9 @@ databaseUpdate db level =
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
 
-dbGetPKGCache :: Database -> IO (ALPMList a)
+dbGetPKGCache :: Database -> IO (List a)
 dbGetPKGCache db = 
-  liftM (ALPMList . castPtr) $ {# call db_get_pkgcache #} db 
+  liftM (List . castPtr) $ {# call db_get_pkgcache #} db 
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
