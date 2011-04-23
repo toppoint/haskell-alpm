@@ -12,7 +12,7 @@ where
 
 import Foreign.C
 import Foreign.Ptr
-import Foreign.Marshal.Utils (toBool, fromBool) 
+import Foreign.Marshal.Utils (toBool, fromBool, maybePeek)
 
 import Control.Monad (liftM)
 
@@ -86,18 +86,18 @@ maybeToEnum n
 -- alpm_cb_totaldl alpm_option_get_totaldlcb(void);
 -- void alpm_option_set_totaldlcb(alpm_cb_totaldl cb);
 
-optionGetRoot :: IO FilePath
+optionGetRoot :: IO (Maybe FilePath)
 optionGetRoot = 
-  {# call option_get_root #} >>= peekCString
+  {# call option_get_root #} >>= maybePeek peekCString
 
 optionSetRoot :: FilePath -> IO (Maybe Error)
 optionSetRoot fp = 
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_set_root #} =<< newCString fp
 
-optionGetDBPath :: IO FilePath
+optionGetDBPath :: IO (Maybe FilePath)
 optionGetDBPath = 
-  {# call option_get_dbpath #} >>= peekCString
+  {# call option_get_dbpath #} >>= maybePeek peekCString
 
 optionSetDBPath :: FilePath -> IO (Maybe Error)
 optionSetDBPath fp = 
@@ -123,9 +123,9 @@ optionRemoveCacheDir str =
   liftM (maybeToEnum . fromIntegral) $ 
     {# call option_remove_cachedir #} =<< newCString str 
 
-optionGetLogFile :: IO String
+optionGetLogFile :: IO (Maybe String)
 optionGetLogFile = 
-  {# call option_get_logfile #} >>= peekCString
+  {# call option_get_logfile #} >>= maybePeek peekCString
 
 optionSetLogFile :: String -> IO (Maybe Error)
 optionSetLogFile str = 
