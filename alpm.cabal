@@ -6,7 +6,7 @@ Description:   Bindings for the Arch Linux Package Management library.
 License:       GPL
 License-File:  LICENSE
 Build-Type:    Simple
-Cabal-Version: >=1.8
+Cabal-Version: >=1.10
 Author:        Andreas Baldeau
 Maintainer:    Andreas Baldeau <andreas@baldeau.net>
 Homepage:      http://github.com/baldo/haskell-alpm
@@ -21,9 +21,32 @@ Source-Repository head
     Type:     git
     Location: git://github.com/baldo/haskell-alpm
 
+Test-Suite Tests
+    Type:
+        exitcode-stdio-1.0
+
+    Default-Language:
+        Haskell2010
+
+    Main-Is:
+        Tests.hs
+
+    Hs-Source-Dirs:
+        src
+        tests
+
+    Build-Depends:
+        alpm,
+        base >= 4 && < 5,
+        HUnit == 1.2.*,
+        HTF == 0.7.*
+
 Library
     Hs-Source-Dirs:
         src
+
+    Default-Language:
+        Haskell2010
 
     Build-Depends:
         base >= 4 && < 5
@@ -41,7 +64,4 @@ Library
 
     Extra-Libraries:
         alpm
-
-    Extensions:
-        ForeignFunctionInterface
 
