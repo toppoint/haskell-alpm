@@ -32,12 +32,12 @@ Test-Suite Tests
         Tests.hs
 
     Hs-Source-Dirs:
-        src
         tests
 
     Build-Depends:
         alpm,
         base >= 4 && < 5,
+        mtl  == 2.0.*,
         HUnit == 1.2.*,
         HTF == 0.7.*
 
@@ -49,7 +49,8 @@ Library
         Haskell2010
 
     Build-Depends:
-        base >= 4 && < 5
+        base == 4.*,
+        mtl  == 2.0.*
 
     Build-Tools:
         c2hs >= 0.16.3 && < 0.17
@@ -58,9 +59,13 @@ Library
         -Wall
 
     Exposed-Modules:
-        Distribution.ArchLinux.ALPM.Types
-        Distribution.ArchLinux.ALPM.List
-        Distribution.ArchLinux.ALPM.Core
+        Distribution.ArchLinux.ALPM
+
+    Other-Modules:
+        Distribution.ArchLinux.ALPM.Internal.Types
+        Distribution.ArchLinux.ALPM.Internal.Monad
+        Distribution.ArchLinux.ALPM.Internal.List
+        Distribution.ArchLinux.ALPM.Internal.Core
 
     Extra-Libraries:
         alpm

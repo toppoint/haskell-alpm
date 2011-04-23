@@ -2,7 +2,7 @@
 
 {# context lib="alpm" prefix="alpm" #}
 
-module Distribution.ArchLinux.ALPM.Types
+module Distribution.ArchLinux.ALPM.Internal.Types
     ( 
       -- * ArchLinux Package Managment Type Class
       ALPMType (..)

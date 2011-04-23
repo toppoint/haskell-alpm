@@ -2,12 +2,11 @@
 
 {# context lib="alpm" prefix="alpm" #}
 
-
-module Distribution.ArchLinux.ALPM.List where
+module Distribution.ArchLinux.ALPM.Internal.List where
 
 #include <alpm_list.h>
 
-{# import Distribution.ArchLinux.ALPM.Types #}
+{# import Distribution.ArchLinux.ALPM.Internal.Types #}
 
 import Control.Monad
 

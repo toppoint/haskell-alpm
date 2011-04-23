@@ -1,40 +1,26 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Util
-    ( alpmTest
+    ( ALPMTest
     )
 where
 
+import qualified Control.Monad.Error as E
+import Control.Monad.Trans
 import Test.HUnit
 import Test.HUnit.Lang
 
-import Distribution.ArchLinux.ALPM.Core
+import Distribution.ArchLinux.ALPM
 
-alpmTest :: IO () -> IO ()
-alpmTest tst = do
-    ie <- initialize
+newtype ALPMTest a = ALPMTest (E.ErrorT Exception IO a)
+  deriving (Monad, MonadIO, E.MonadError Exception)
 
-    case ie of
-        Just e ->
-            assertFailure $ "initialize: " ++ show e
+instance E.Error Exception where
+    noMsg = UnknownError 0
+    strMsg _ = UnknownError 0
 
-        Nothing -> do
-            tr <- performTestCase tst
-            re <- release
-
-            case re of
-                Just e ->
-                    assertFailure $ "release: " ++ show e
-
-                Nothing ->
-                    case tr of
-                        Nothing ->
-                            -- success
-                            assertBool "" True
-
-                        Just (True, msg) ->
-                            -- failure
-                            assertFailure msg
-
-                        Just (False, msg) ->
-                            -- error
-                            assertBool msg False
+instance MonadALPM ALPMTest where
+    run (ALPMTest action) = E.runErrorT action
+    throw = E.throwError
+    catch action = E.catchError (action >>= return . Right) (return . Left)
 
