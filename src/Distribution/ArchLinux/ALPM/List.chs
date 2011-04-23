@@ -73,8 +73,15 @@ removeItemALPMList :: ALPMList a -> ALPMList a -> IO (ALPMList a)
 removeItemALPMList lst1 lst2 = do
   liftM ALPMList $ alpm_list_remove_item (unALPMList lst1) (unALPMList lst2)
 
+removeALPMList :: (ALPMType a,ALPMType b) => ALPMList a -> b -> ALPMListSort a b -> IO (a,ALPMList a)
+removeALPMList lst needle sort = do
+  csort <- mkALPMListSort (alpmListSortWrapper sort)
+  alloca $ \dataPtr -> do 
+    newList <- liftM ALPMList $ alpm_list_remove (unALPMList lst) (unpack needle) csort dataPtr
+    freeHaskellFunPtr csort
+    ptr <- liftM castPtr $ peek dataPtr
+    return (pack ptr,newList)
 {-
-alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn, void **data);
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
 
@@ -172,3 +179,7 @@ foreign import ccall safe "alpm_list.h alpm_list_msort"
 
 foreign import ccall safe "alpm_list.h alpm_list_remove_item" 
   alpm_list_remove_item :: Ptr (ALPMList a) -> Ptr (ALPMList a) -> IO (Ptr (ALPMList a))
+
+--alpm_list_t *alpm_list_remove(alpm_list_t *haystack, const void *needle, alpm_list_fn_cmp fn, void **data);
+foreign import ccall safe "alpm_list.h alpm_list_remove"
+  alpm_list_remove :: Ptr (ALPMList a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> CInt) -> Ptr (Ptr a) -> IO (Ptr (ALPMList a))
