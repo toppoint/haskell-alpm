@@ -81,7 +81,7 @@ removeList lst needle sort = do
     ptr <- liftM castPtr $ peek dataPtr
     return (pack ptr,newList)
 
-{-
+{- TODO
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
 
@@ -94,7 +94,7 @@ strdupList = liftM List . alpm_list_strdup . unList
 copyList :: List a -> IO (List a)
 copyList =  liftM List . alpm_list_copy . unList
 
--- Do we really need this function, for this the type parameter of List
+-- TODO - Do we really need this function, for this the type parameter of List
 -- should be an instance of Storable   
 -- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
 
@@ -133,7 +133,7 @@ findList list needle sort = do
     then return Nothing
     else return .Just $ pack needleData
 
-{-
+{- TODO
 void *alpm_list_find_ptr(const alpm_list_t *haystack, const void *needle);
 char *alpm_list_find_str(const alpm_list_t *haystack, const char *needle);
 alpm_list_t *alpm_list_diff(const alpm_list_t *lhs, const alpm_list_t *rhs, alpm_list_fn_cmp fn);
