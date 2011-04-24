@@ -12,12 +12,12 @@ module Distribution.ArchLinux.ALPM.Internal.Monad
       ALPM
     , Exception (..)
 
-      -- * Type class
-    , MonadALPM (..)
-
       -- * Functions
     , alpm
     , handleError
+
+    , throw
+    , catch
     )
 where
 
@@ -46,22 +46,12 @@ instance E.Error Exception where
     strMsg _ = UnknownError 0
 
 
--- Type class ----------------------------------------------------------------
-
-class MonadIO m => MonadALPM m where
-    run  :: m a -> IO (Either Exception a)
-    throw :: Exception -> m a
-    catch :: m a -> m (Either Exception a)
-
-instance MonadALPM ALPM where
-    run (ALPM action) = E.runErrorT action
-    throw = E.throwError
-    catch action = E.catchError (action >>= return . Right) (return . Left)
-
-
 -- Functions -----------------------------------------------------------------
 
-alpm :: MonadALPM m => m a -> IO (Either Exception a)
+run  :: ALPM a -> IO (Either Exception a)
+run (ALPM action) = E.runErrorT action
+
+alpm :: ALPM a -> IO (Either Exception a)
 alpm a = run $ do
     initialize
     r <- catch a
@@ -74,21 +64,27 @@ alpm a = run $ do
         Right r' ->
             return r'
 
-handleError :: MonadALPM m => CInt -> m ()
+handleError :: CInt -> ALPM ()
 handleError 0 = return ()
 handleError e
   | e < 0     = throw $ UnknownError $ fromIntegral e
   | otherwise = throw $ Error $ toEnum $ fromIntegral e
 
+throw :: Exception -> ALPM a
+throw = E.throwError
+
+catch :: ALPM a -> ALPM (Either Exception a)
+catch action = E.catchError (action >>= return . Right) (return . Left)
+
 -- | This function needs to be called first or nothing else will work.
-initialize :: MonadALPM m => m ()
+initialize :: ALPM ()
 initialize = do
     e <- liftIO {# call initialize #}
     handleError e
 
 -- | Call this function to clean up. After this the library is no longer
 -- available
-release :: MonadALPM m => m ()
+release :: ALPM ()
 release = do
     e <- liftIO {# call release #}
     handleError e
