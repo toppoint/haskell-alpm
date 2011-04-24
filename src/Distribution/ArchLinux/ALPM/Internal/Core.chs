@@ -379,7 +379,6 @@ deltaGetSize = valueToInteger . {# call delta_get_size #}
 
 -- Group ---------------------------------------------------------------------
 
-
 groupGetName :: Group -> ALPM String
 groupGetName = valueToString . {# call grp_get_name #}
 
