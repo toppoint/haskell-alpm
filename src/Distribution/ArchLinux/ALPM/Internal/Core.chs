@@ -20,40 +20,40 @@ import Control.Monad.Trans
 
 -- Helpers ------------------------------------------------------------------
 
-getBool :: MonadALPM m => IO CInt -> m Bool
+getBool :: IO CInt -> ALPM Bool
 getBool getter = liftIO $ liftM toBool getter
 
-setBool :: MonadALPM m => (CInt -> IO ()) -> Bool -> m ()
+setBool :: (CInt -> IO ()) -> Bool -> ALPM ()
 setBool setter = liftIO . setter . fromBool
 
-getString :: MonadALPM m => IO CString -> m (Maybe String)
+getString :: IO CString -> ALPM (Maybe String)
 getString getter = liftIO $ getter >>= maybePeek peekCString
 
-setString :: MonadALPM m => (CString -> IO CInt) -> String -> m ()
+setString :: (CString -> IO CInt) -> String -> ALPM ()
 setString setter str =
     withErrorHandling $ newCString str >>= setter
 
-setString_ :: MonadALPM m => (CString -> IO ()) -> String -> m ()
+setString_ :: (CString -> IO ()) -> String -> ALPM ()
 setString_ setter str = liftIO $ newCString str >>= setter
 
-setList :: MonadALPM m => (Ptr a -> IO ()) -> List b -> m ()
+setList :: (Ptr a -> IO ()) -> List b -> ALPM ()
 setList setter = liftIO . setter . castPtr . unList
 
-getList :: MonadALPM m => IO (Ptr a) -> m (List b)
+getList :: IO (Ptr a) -> ALPM (List b)
 getList getter = liftIO $ liftM (List . castPtr) $ getter
 
-valueToString :: MonadALPM m => (a -> IO CString) -> a -> m String
+valueToString :: (a -> IO CString) -> a -> ALPM String
 valueToString converter value = liftIO $ converter value >>= peekCString
 
-valueToList :: MonadALPM m => (a -> IO (Ptr b)) -> a -> m (List c)
+valueToList :: (a -> IO (Ptr b)) -> a -> ALPM (List c)
 valueToList converter value =
     liftIO $ liftM (List . castPtr) $ converter value
 
-setEnum :: (Enum e, MonadALPM m) => (CInt -> IO CInt) -> e -> m ()
+setEnum :: Enum e => (CInt -> IO CInt) -> e -> ALPM ()
 setEnum setter enum =
     withErrorHandling $ setter (fromIntegral $ fromEnum enum)
 
-withErrorHandling :: MonadALPM m => IO CInt -> m ()
+withErrorHandling :: IO CInt -> ALPM ()
 withErrorHandling action =
     liftIO action >>= handleError
 
@@ -71,7 +71,7 @@ maybeToEnum n
 -- General ------------------------------------------------------------------
 
 -- | Get ALPM's version.
-getVersion :: MonadALPM m => m String
+getVersion :: ALPM String
 getVersion = liftIO $
     {# call version #} >>= peekCString
 
@@ -113,112 +113,112 @@ getVersion = liftIO $
 -- alpm_cb_totaldl alpm_option_get_totaldlcb(void);
 -- void alpm_option_set_totaldlcb(alpm_cb_totaldl cb);
 
-optionGetRoot :: MonadALPM m => m (Maybe FilePath)
+optionGetRoot :: ALPM (Maybe FilePath)
 optionGetRoot = getString {# call option_get_root #}
 
-optionSetRoot :: MonadALPM m => FilePath -> m ()
+optionSetRoot :: FilePath -> ALPM ()
 optionSetRoot = setString {# call option_set_root #}
 
-optionGetDBPath :: MonadALPM m => m (Maybe FilePath)
+optionGetDBPath :: ALPM (Maybe FilePath)
 optionGetDBPath = getString {# call option_get_dbpath #}
 
-optionSetDBPath :: MonadALPM m => FilePath -> m ()
+optionSetDBPath :: FilePath -> ALPM ()
 optionSetDBPath = setString {# call option_set_dbpath #}
 
-optionGetCacheDirs :: MonadALPM m => m (List a)
+optionGetCacheDirs :: ALPM (List a)
 optionGetCacheDirs = liftIO $
   liftM (List . castPtr) $ {# call option_get_cachedirs #}
 
-optionAddCacheDir :: MonadALPM m => FilePath -> m ()
+optionAddCacheDir :: FilePath -> ALPM ()
 optionAddCacheDir = setString {# call option_add_cachedir #}
 
-optionSetCacheDirs :: MonadALPM m => List a -> m ()
+optionSetCacheDirs :: List a -> ALPM ()
 optionSetCacheDirs = setList {# call option_set_cachedirs #}
 
-optionRemoveCacheDir :: MonadALPM m => FilePath -> m ()
+optionRemoveCacheDir :: FilePath -> ALPM ()
 optionRemoveCacheDir = setString {# call option_remove_cachedir #}
 
-optionGetLogFile :: MonadALPM m => m (Maybe FilePath)
+optionGetLogFile :: ALPM (Maybe FilePath)
 optionGetLogFile = getString {# call option_get_logfile #}
 
-optionSetLogFile :: MonadALPM m => FilePath -> m ()
+optionSetLogFile :: FilePath -> ALPM ()
 optionSetLogFile = setString {# call option_set_logfile #}
 
-optionGetLockFile :: MonadALPM m => m (Maybe FilePath)
+optionGetLockFile :: ALPM (Maybe FilePath)
 optionGetLockFile = getString {# call option_get_lockfile #}
 
 -- /* no set_lockfile, path is determined from dbpath */
 
-optionGetUseSyslog :: MonadALPM m => m Bool
+optionGetUseSyslog :: ALPM Bool
 optionGetUseSyslog = getBool {# call option_get_usesyslog #}
 
-optionSetUseSyslog :: MonadALPM m => Bool -> m ()
+optionSetUseSyslog :: Bool -> ALPM ()
 optionSetUseSyslog = setBool {# call option_set_usesyslog #}
 
-optionGetNoUpgrades :: MonadALPM m => m (List a)
+optionGetNoUpgrades :: ALPM (List a)
 optionGetNoUpgrades = getList {# call option_get_noupgrades #}
 
-optionAddNoUpgrade :: MonadALPM m => String -> m ()
+optionAddNoUpgrade :: String -> ALPM ()
 optionAddNoUpgrade = setString_ {# call option_add_noupgrade #}
 
-optionSetNoUpgrades :: MonadALPM m => (List a) -> m ()
+optionSetNoUpgrades :: (List a) -> ALPM ()
 optionSetNoUpgrades = setList {# call option_set_noupgrades #}
 
-optionRemoveNoUpgrade :: MonadALPM m => String -> m ()
+optionRemoveNoUpgrade :: String -> ALPM ()
 optionRemoveNoUpgrade = setString {# call option_remove_noupgrade #}
 
-optionGetNoExtracts :: MonadALPM m => m (List a)
+optionGetNoExtracts :: ALPM (List a)
 optionGetNoExtracts = getList {# call option_get_noextracts #}
 
-optionAddNoExtract :: MonadALPM m => String -> m ()
+optionAddNoExtract :: String -> ALPM ()
 optionAddNoExtract = setString_ {# call option_add_noextract #}
 
-optionSetNoExtracts :: MonadALPM m => List a -> m ()
+optionSetNoExtracts :: List a -> ALPM ()
 optionSetNoExtracts = setList {# call option_set_noextracts #}
 
-optionRemoveNoExtract :: MonadALPM m => String -> m ()
+optionRemoveNoExtract :: String -> ALPM ()
 optionRemoveNoExtract = setString {# call option_remove_noextract #}
 
-optionGetIgnorePkgs :: MonadALPM m => m (List a)
+optionGetIgnorePkgs :: ALPM (List a)
 optionGetIgnorePkgs = getList {# call option_get_ignorepkgs #}
 
-optionAddIgnorePkg :: MonadALPM m => String -> m ()
+optionAddIgnorePkg :: String -> ALPM ()
 optionAddIgnorePkg = setString_ {# call option_add_ignorepkg #}
 
-optionSetIgnorePkgs :: MonadALPM m => List a -> m ()
+optionSetIgnorePkgs :: List a -> ALPM ()
 optionSetIgnorePkgs = setList {# call option_set_ignorepkgs #}
 
-optionRemoveIgnorePkg :: MonadALPM m => String -> m ()
+optionRemoveIgnorePkg :: String -> ALPM ()
 optionRemoveIgnorePkg = setString {# call option_remove_ignorepkg #}
 
-optionGetIgnoreGrps :: MonadALPM m => m (List a)
+optionGetIgnoreGrps :: ALPM (List a)
 optionGetIgnoreGrps = getList {# call option_get_ignoregrps #}
 
-optionAddIgnoreGrp :: MonadALPM m => String -> m ()
+optionAddIgnoreGrp :: String -> ALPM ()
 optionAddIgnoreGrp = setString_ {# call option_add_ignoregrp #}
 
-optionSetIgnoreGrps :: MonadALPM m => (List a) -> m ()
+optionSetIgnoreGrps :: (List a) -> ALPM ()
 optionSetIgnoreGrps = setList {# call option_set_ignoregrps #}
 
-optionRemoveIgnoreGrp :: MonadALPM m => String -> m ()
+optionRemoveIgnoreGrp :: String -> ALPM ()
 optionRemoveIgnoreGrp = setString {# call option_remove_ignoregrp #}
 
-optionGetArch :: MonadALPM m => m (Maybe String)
+optionGetArch :: ALPM (Maybe String)
 optionGetArch = getString {# call option_get_arch #}
 
-optionSetArch :: MonadALPM m => String -> m ()
+optionSetArch :: String -> ALPM ()
 optionSetArch = setString_ {# call option_set_arch #}
 
-optionGetUseDelta :: MonadALPM m => m Bool
+optionGetUseDelta :: ALPM Bool
 optionGetUseDelta = getBool {# call option_get_usedelta #}
 
-optionSetUserDelta :: MonadALPM m => Bool -> m ()
+optionSetUserDelta :: Bool -> ALPM ()
 optionSetUserDelta = setBool {# call option_set_usedelta #}
 
-optionGetCheckSpace :: MonadALPM m => m Bool
+optionGetCheckSpace :: ALPM Bool
 optionGetCheckSpace = getBool {# call option_get_checkspace #}
 
-optionSetCheckSpace :: MonadALPM m => Bool -> m ()
+optionSetCheckSpace :: Bool -> ALPM ()
 optionSetCheckSpace = setBool {# call option_set_checkspace #}
 
 -- db.h
@@ -228,27 +228,27 @@ optionSetCheckSpace = setBool {# call option_set_checkspace #}
 
 -- Database ------------------------------------------------------------------
 
-databaseRegisterSync :: MonadALPM m => String -> m (Maybe Database)
+databaseRegisterSync :: String -> ALPM (Maybe Database)
 databaseRegisterSync treeName = liftIO $ do
     db <- withCString treeName $ {# call db_register_sync #}
     return $ checkForNull unpack db
 
-databaseUnregister :: MonadALPM m => Database -> m ()
+databaseUnregister :: Database -> ALPM ()
 databaseUnregister db = withErrorHandling $ {# call db_unregister #} db
 
-databaseUnregisterAll :: MonadALPM m => m ()
+databaseUnregisterAll :: ALPM ()
 databaseUnregisterAll = withErrorHandling {# call db_unregister_all #}
 
-databaseGetName :: MonadALPM m => Database -> m String
+databaseGetName :: Database -> ALPM String
 databaseGetName = valueToString {# call alpm_db_get_name #}
 
-databaseGetUrl :: MonadALPM m => Database -> m String
+databaseGetUrl :: Database -> ALPM String
 databaseGetUrl = valueToString {# call alpm_db_get_url #}
 
-databaseSetServer :: MonadALPM m => Database -> String -> m ()
+databaseSetServer :: Database -> String -> ALPM ()
 databaseSetServer db = setString $ {# call db_setserver #} db
 
-databaseUpdate :: MonadALPM m => Database -> LogLevel -> m ()
+databaseUpdate :: Database -> LogLevel -> ALPM ()
 databaseUpdate db = setEnum (flip {# call db_update #} db)
 
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
@@ -361,35 +361,35 @@ dbGetPKGCache = valueToList {# call db_get_pkgcache #}
 -- pmpkg_t *alpm_find_satisfier(alpm_list_t *pkgs, const char *depstring);
 -- pmpkg_t *alpm_find_dbs_satisfier(alpm_list_t *dbs, const char *depstring);
 
-missGetTarget :: MonadALPM m => DependencyMissing -> m String
+missGetTarget :: DependencyMissing -> ALPM String
 missGetTarget = valueToString {# call miss_get_target #}
 
-missGetDependency :: MonadALPM m => DependencyMissing -> m Dependency
+missGetDependency :: DependencyMissing -> ALPM Dependency
 missGetDependency = liftIO . {# call miss_get_dep #}
 
-missGetCausingPackage :: MonadALPM m => DependencyMissing -> m String
+missGetCausingPackage :: DependencyMissing -> ALPM String
 missGetCausingPackage = valueToString {# call miss_get_causingpkg #}
 
 -- alpm_list_t *alpm_checkconflicts(alpm_list_t *pkglist);
 
-conflictGetPackage1 :: MonadALPM m => Conflict -> m String
+conflictGetPackage1 :: Conflict -> ALPM String
 conflictGetPackage1 = valueToString {# call conflict_get_package1 #}
 
-conflictGetPackage2 :: MonadALPM m => Conflict -> m String
+conflictGetPackage2 :: Conflict -> ALPM String
 conflictGetPackage2 = valueToString {# call conflict_get_package2 #}
 
-conflictGetReason :: MonadALPM m => Conflict -> m String
+conflictGetReason :: Conflict -> ALPM String
 conflictGetReason = valueToString {# call conflict_get_reason #}
 
 -- pmdepmod_t alpm_dep_get_mod(const pmdepend_t *dep);
 
-dependencyGetName :: MonadALPM m => Dependency -> m String
+dependencyGetName :: Dependency -> ALPM String
 dependencyGetName = valueToString {# call dep_get_name #}
 
-dependencyGetVersion :: MonadALPM m => Dependency -> m String
+dependencyGetVersion :: Dependency -> ALPM String
 dependencyGetVersion = valueToString {# call dep_get_version #}
 
-dependencyComputeString :: MonadALPM m => Dependency -> m String
+dependencyComputeString :: Dependency -> ALPM String
 dependencyComputeString = valueToString {# call dep_compute_string #}
 
 
@@ -403,14 +403,14 @@ dependencyComputeString = valueToString {# call dep_compute_string #}
 
 -- Helpers -------------------------------------------------------------------
 
-computeMd5Sum :: MonadALPM m => String -> m String
+computeMd5Sum :: String -> ALPM String
 computeMd5Sum name = liftIO $
     withCString name {# call compute_md5sum #} >>= peekCString
 
-strError :: MonadALPM m => Error -> m String
+strError :: Error -> ALPM String
 strError err = liftIO $
     {# call strerror #} (fromIntegral $ fromEnum err) >>= peekCString
 
-strErrorLast :: MonadALPM m => m (Maybe String)
+strErrorLast :: ALPM (Maybe String)
 strErrorLast = getString {# call strerrorlast #}
 
