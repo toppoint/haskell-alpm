@@ -135,11 +135,11 @@ fromList list = do
     return (el,lst')
     ) flist
  where whileJust :: (b -> IO (Maybe a,b)) -> b -> IO [a]
-       whileJust f null = do
-        (mEntry,null') <- f null 
+       whileJust f isNull = do
+        (mEntry, isNull') <- f isNull 
         case mEntry of
           Just x  -> do 
-            lst <- whileJust f null'
+            lst <- whileJust f isNull'
             return $ x : lst
           Nothing -> return []
 
