@@ -58,6 +58,9 @@ setEnum :: Enum e => (CInt -> IO CInt) -> e -> ALPM ()
 setEnum setter enum =
     withErrorHandling $ setter (fromIntegral $ fromEnum enum)
 
+valueToEnum :: Enum e => IO CInt -> ALPM e
+valueToEnum converter = liftIO $ return . toEnum . fromIntegral =<< converter
+
 withErrorHandling :: IO CInt -> ALPM ()
 withErrorHandling action =
     liftIO action >>= handleError
@@ -266,7 +269,6 @@ databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
 -- alpm_list_t *alpm_db_search(pmdb_t *db, const alpm_list_t* needles);
 
-
 -- int alpm_db_set_pkgreason(pmdb_t *db, const char *name, pmpkgreason_t reason);
 
 
@@ -313,34 +315,34 @@ packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 -- pmpkgreason_t alpm_pkg_get_reason(pmpkg_t *pkg);
 
 packageGetLicenses :: Package -> ALPM (List String)
-packageGetLicenses = valueToList {# call pkg_get_licenses #}
+packageGetLicenses = valueToList . {# call pkg_get_licenses #}
 
 packageGetGroups :: Package -> ALPM (List Group)
-packageGetGroups = valueToList {# call pkg_get_groups #}
+packageGetGroups = valueToList . {# call pkg_get_groups #}
 
 packageGetDependencies :: Package -> ALPM (List Dependency)
-packageGetDependencies = valueToList {# call pkg_get_depends #}
+packageGetDependencies = valueToList . {# call pkg_get_depends #}
 
 packageGetOptionalDependencies :: Package -> ALPM (List Dependency)
-packageGetOptionalDependencies = valueToList {# call pkg_get_optdepends #}
+packageGetOptionalDependencies = valueToList . {# call pkg_get_optdepends #}
 
 packageGetConflicts :: Package -> ALPM (List Conflict)
-packageGetConflicts = valueToList {# call pkg_get_conflicts #}
+packageGetConflicts = valueToList . {# call pkg_get_conflicts #}
 
 packageGetProvides :: Package -> ALPM (List String)
-packageGetProvides = valueToList {# call pkg_get_provides #}
+packageGetProvides = valueToList . {# call pkg_get_provides #}
 
 packageGetDeltas :: Package -> ALPM (List Delta)
-packageGetDeltas = valueToList {# call pkg_get_deltas #}
+packageGetDeltas = valueToList . {# call pkg_get_deltas #}
 
 packageGetReplaces :: Package -> ALPM (List String)
-packageGetReplaces = valueToList {# call pkg_get_replaces #}
+packageGetReplaces = valueToList . {# call pkg_get_replaces #}
 
 packageGetFiles :: Package -> ALPM (List FilePath)
-packageGetFiles = valueToList {# call pkg_get_files #}
+packageGetFiles = valueToList . {# call pkg_get_files #}
 
 packageGetBackup :: Package -> ALPM (List String)
-packageGetBackup = valueToList {# call pkg_get_backup #}
+packageGetBackup = valueToList . {# call pkg_get_backup #}
 
 packageGetDatabase :: Package -> ALPM Database
 packageGetDatabase = liftIO . {# call pkg_get_db #}
@@ -355,7 +357,7 @@ packageGetDatabase = liftIO . {# call pkg_get_db #}
 -- off_t alpm_pkg_download_size(pmpkg_t *newpkg);
 
 packageUnusedDeltas :: Package -> ALPM (List Delta)
-packageUnusedDeltas = valueToList {# call pkg_unused_deltas #}
+packageUnusedDeltas = valueToList . {# call pkg_unused_deltas #}
 
 -- Delta ---------------------------------------------------------------------
 
@@ -461,10 +463,18 @@ dependencyComputeString = valueToString . {# call dep_compute_string #}
 
 -- File conflicts ------------------------------------------------------------
 
--- const char *alpm_fileconflict_get_target(pmfileconflict_t *conflict);
--- pmfileconflicttype_t alpm_fileconflict_get_type(pmfileconflict_t *conflict);
--- const char *alpm_fileconflict_get_file(pmfileconflict_t *conflict);
--- const char *alpm_fileconflict_get_ctarget(pmfileconflict_t *conflict);
+fileConflictGetTaget :: FileConflict -> ALPM String
+fileConflictGetTaget = valueToString . {# call fileconflict_get_target #}
+
+fileConflictGetType :: FileConflict -> ALPM FileConflictType
+fileConflictGetType = valueToEnum . {# call fileconflict_get_type #}
+
+fileConflictGetFile :: FileConflict -> ALPM FilePath
+fileConflictGetFile = valueToString . {# call fileconflict_get_file #}
+
+fileConflictGetConflictingTarget :: FileConflict -> ALPM String
+fileConflictGetConflictingTarget =
+    valueToString . {# call fileconflict_get_ctarget #}
 
 
 -- Helpers -------------------------------------------------------------------
