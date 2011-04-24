@@ -45,8 +45,8 @@ getList getter = liftIO $ liftM (List . castPtr) $ getter
 valueToString :: IO CString -> ALPM String
 valueToString = liftIO . (=<<) peekCString
 
-valueToList :: IO (Ptr b) -> ALPM (List c)
-valueToList = liftIO . liftM (List . castPtr)
+valueToList :: ALPMType c => IO (Ptr b) -> ALPM ([c])
+valueToList = liftIO . (=<<) fromList . (liftM (List . castPtr))
 
 valueToInt :: IO CInt -> ALPM Int
 valueToInt = liftIO . liftM fromIntegral
@@ -65,10 +65,12 @@ withErrorHandling :: IO CInt -> ALPM ()
 withErrorHandling action =
     liftIO action >>= handleError
 
-checkForNull :: (a -> Ptr a) -> a -> Maybe a
-checkForNull unObj obj
-  | unObj obj == nullPtr = Nothing
-  | otherwise            = Just obj
+checkForNull :: (a -> IO (Ptr a)) -> a -> IO (Maybe a)
+checkForNull unObj obj = do 
+  result <- unObj obj
+  if result == nullPtr 
+    then return Nothing
+    else return $ Just obj
 
 maybeToEnum :: Enum a => Int -> Maybe a
 maybeToEnum n
@@ -239,7 +241,7 @@ optionSetCheckSpace = setBool {# call option_set_checkspace #}
 databaseRegisterSync :: String -> ALPM (Maybe Database)
 databaseRegisterSync treeName = liftIO $ do
     db <- withCString treeName $ {# call db_register_sync #}
-    return $ checkForNull unpack db
+    checkForNull unpack db 
 
 databaseUnregister :: Database -> ALPM ()
 databaseUnregister db = withErrorHandling $ {# call db_unregister #} db
@@ -262,7 +264,7 @@ databaseUpdate db = setEnum (flip {# call db_update #} db)
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
 
-databaseGetPackageCache :: Database -> ALPM (List Package)
+databaseGetPackageCache :: Database -> ALPM [Package]
 databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
@@ -314,34 +316,34 @@ packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 -- off_t alpm_pkg_get_isize(pmpkg_t *pkg);
 -- pmpkgreason_t alpm_pkg_get_reason(pmpkg_t *pkg);
 
-packageGetLicenses :: Package -> ALPM (List String)
+packageGetLicenses :: Package -> ALPM [String]
 packageGetLicenses = valueToList . {# call pkg_get_licenses #}
 
-packageGetGroups :: Package -> ALPM (List Group)
+packageGetGroups :: Package -> ALPM [Group]
 packageGetGroups = valueToList . {# call pkg_get_groups #}
 
-packageGetDependencies :: Package -> ALPM (List Dependency)
+packageGetDependencies :: Package -> ALPM [Dependency]
 packageGetDependencies = valueToList . {# call pkg_get_depends #}
 
-packageGetOptionalDependencies :: Package -> ALPM (List Dependency)
+packageGetOptionalDependencies :: Package -> ALPM [Dependency]
 packageGetOptionalDependencies = valueToList . {# call pkg_get_optdepends #}
 
-packageGetConflicts :: Package -> ALPM (List Conflict)
+packageGetConflicts :: Package -> ALPM [Conflict]
 packageGetConflicts = valueToList . {# call pkg_get_conflicts #}
 
-packageGetProvides :: Package -> ALPM (List String)
+packageGetProvides :: Package -> ALPM [String]
 packageGetProvides = valueToList . {# call pkg_get_provides #}
 
-packageGetDeltas :: Package -> ALPM (List Delta)
+packageGetDeltas :: Package -> ALPM [Delta]
 packageGetDeltas = valueToList . {# call pkg_get_deltas #}
 
-packageGetReplaces :: Package -> ALPM (List String)
+packageGetReplaces :: Package -> ALPM [String]
 packageGetReplaces = valueToList . {# call pkg_get_replaces #}
 
-packageGetFiles :: Package -> ALPM (List FilePath)
+packageGetFiles :: Package -> ALPM [FilePath]
 packageGetFiles = valueToList . {# call pkg_get_files #}
 
-packageGetBackup :: Package -> ALPM (List String)
+packageGetBackup :: Package -> ALPM [String]
 packageGetBackup = valueToList . {# call pkg_get_backup #}
 
 packageGetDatabase :: Package -> ALPM Database
@@ -356,7 +358,7 @@ packageGetDatabase = liftIO . {# call pkg_get_db #}
 
 -- off_t alpm_pkg_download_size(pmpkg_t *newpkg);
 
-packageUnusedDeltas :: Package -> ALPM (List Delta)
+packageUnusedDeltas :: Package -> ALPM [Delta]
 packageUnusedDeltas = valueToList . {# call pkg_unused_deltas #}
 
 -- Delta ---------------------------------------------------------------------
@@ -383,10 +385,10 @@ deltaGetSize = valueToInteger . {# call delta_get_size #}
 groupGetName :: Group -> ALPM String
 groupGetName = valueToString . {# call grp_get_name #}
 
-groupGetPackages :: Group -> ALPM (List Package)
+groupGetPackages :: Group -> ALPM [Package]
 groupGetPackages = valueToList . {# call grp_get_pkgs #}
 
-findGroupPackages :: List Database -> String -> ALPM (List Group)
+findGroupPackages :: List Database -> String -> ALPM [Group]
 findGroupPackages db str = valueToList . 
     withCString str $ \cstr ->
       {# call find_grp_pkgs #} (castPtr $ unList db)  cstr

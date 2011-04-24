@@ -26,19 +26,21 @@ unList (List ptr) = ptr
 
 type ListCmp a b = a -> b -> Int 
 foreign import ccall "wrapper" 
-  mkListCmp :: (Ptr a -> Ptr b -> CInt) 
-                 -> IO (FunPtr (Ptr a -> Ptr b -> CInt))
+  mkListCmp :: (Ptr a -> Ptr b -> IO CInt) 
+                 -> IO (FunPtr (Ptr a -> Ptr b -> IO CInt))
 
-alpmListSortWrapper :: (ALPMType a,ALPMType b) => ListCmp a b -> Ptr a -> Ptr b -> CInt
-alpmListSortWrapper f c1 c2 =
-  fromIntegral $ f (pack c1) (pack c2)
+alpmListSortWrapper :: (ALPMType a,ALPMType b) => ListCmp a b -> Ptr a -> Ptr b -> IO CInt
+alpmListSortWrapper f c1 c2 = do
+  pc1 <- pack c1
+  pc2 <- pack c2
+  return . fromIntegral $ f pc1 pc2
 
 -- List Mutaters --------------------------------------------------------------
 
 addList :: ALPMType a =>  List a -> a -> IO (List a)
 addList list ptr = 
   liftM List $ 
-    alpm_list_add (unList list) (unpack ptr)
+    alpm_list_add (unList list) =<< unpack ptr
 
 joinList :: List a -> List a -> IO (List a)
 joinList lst1 lst2 =
@@ -48,7 +50,8 @@ joinList lst1 lst2 =
 addSortedList :: ALPMType a => List a -> a -> ListCmp a a -> IO (List a)
 addSortedList list dat sort = do
   csort <- mkListCmp (alpmListSortWrapper sort)
-  newList <- liftM List $ alpm_list_add_sorted (unList list) (unpack dat) csort 
+  cdata <- unpack dat
+  newList <- liftM List $ alpm_list_add_sorted (unList list) cdata csort 
   freeHaskellFunPtr csort
   return newList 
 
@@ -76,10 +79,12 @@ removeList :: (ALPMType a,ALPMType b) => List a -> b -> ListCmp a b -> IO (a,Lis
 removeList lst needle sort = do
   csort <- mkListCmp (alpmListSortWrapper sort)
   alloca $ \dataPtr -> do 
-    newList <- liftM List $ alpm_list_remove (unList lst) (unpack needle) csort dataPtr
+    cneedle <- unpack needle
+    newList <- liftM List $ alpm_list_remove (unList lst) cneedle csort dataPtr
     freeHaskellFunPtr csort
     ptr <- liftM castPtr $ peek dataPtr
-    return (pack ptr,newList)
+    pptr <- pack ptr
+    return (pptr,newList)
 
 {- TODO
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
@@ -122,7 +127,7 @@ getDataList list = do
   element <- alpm_list_getdata $ unList list
   if element == nullPtr 
     then return Nothing
-    else return . Just $ pack element
+    else (return . Just) =<< pack element
 
 fromList :: ALPMType a => List a -> IO [a]
 fromList list = do
@@ -156,10 +161,11 @@ countList = liftM fromIntegral . alpm_list_count . unList
 findList :: (ALPMType a,ALPMType b) => List a -> b -> ListCmp a b -> IO (Maybe a)
 findList list needle sort = do
   csort <- mkListCmp (alpmListSortWrapper sort)
-  needleData <- alpm_list_find (unList list) (unpack needle) csort
+  cneedle <- unpack needle
+  needleData <- alpm_list_find (unList list) cneedle csort
   if needleData == nullPtr 
     then return Nothing
-    else return .Just $ pack needleData
+    else (return .Just) =<< pack needleData
 
 {- TODO
 void *alpm_list_find_ptr(const alpm_list_t *haystack, const void *needle);
@@ -176,10 +182,10 @@ foreign import ccall safe "alpm_list.h alpm_list_join"
   alpm_list_join :: Ptr (List a) -> Ptr (List a) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_add_sorted"
-  alpm_list_add_sorted :: Ptr (List a) -> Ptr a -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (List a))
+  alpm_list_add_sorted :: Ptr (List a) -> Ptr a -> FunPtr (Ptr a -> Ptr a -> IO CInt) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_mmerge"
-  alpm_list_mmerge :: Ptr (List a) -> Ptr (List a) -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (List a))
+  alpm_list_mmerge :: Ptr (List a) -> Ptr (List a) -> FunPtr (Ptr a -> Ptr a -> IO CInt) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_remove_dupes"
   alpm_list_remove_dupes :: Ptr (List a) -> IO (Ptr (List a))
@@ -212,13 +218,13 @@ foreign import ccall safe "alpm_list.h alpm_list_count"
   alpm_list_count :: Ptr (List a) -> IO  CInt 
 
 foreign import ccall safe "alpm_list.h alpm_list_msort" 
-  alpm_list_msort :: Ptr (List a) -> CInt -> FunPtr (Ptr a -> Ptr a -> CInt) -> IO (Ptr (List a))
+  alpm_list_msort :: Ptr (List a) -> CInt -> FunPtr (Ptr a -> Ptr a -> IO CInt) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_remove_item" 
   alpm_list_remove_item :: Ptr (List a) -> Ptr (List a) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_remove"
-  alpm_list_remove :: Ptr (List a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> CInt) -> Ptr (Ptr a) -> IO (Ptr (List a))
+  alpm_list_remove :: Ptr (List a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> IO CInt) -> Ptr (Ptr a) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_find"
-  alpm_list_find :: Ptr (List a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> CInt) -> IO (Ptr a)
+  alpm_list_find :: Ptr (List a) -> Ptr b -> FunPtr (Ptr a -> Ptr b -> IO CInt) -> IO (Ptr a)

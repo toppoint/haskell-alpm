@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ForeignFunctionInterface, TypeSynonymInstances #-}
 
 {# context lib="alpm" prefix="alpm" #}
 
@@ -33,69 +33,75 @@ where
 
 #include <alpm.h>
 
+import Control.Monad
 import Foreign
+import Foreign.C.String
 
 -- Packable Type -------------------------------------------------------------
 
 class ALPMType a where
-    unpack :: a -> Ptr a
-    pack   :: Ptr a -> a 
+    unpack :: a -> IO (Ptr a)
+    pack   :: Ptr a -> IO a 
 
 -- Types ---------------------------------------------------------------------
+
+instance ALPMType String where
+    unpack = liftM castPtr .  newCString 
+    pack   = peekCString . castPtr 
 
 {# pointer *pmdb_t as Database newtype #}
 
 instance ALPMType Database where
-    unpack (Database ptr) = ptr
-    pack = Database
+    unpack (Database ptr) = return ptr
+    pack = return . Database
 
 {# pointer *pmpkg_t as Package newtype #}
 
 instance ALPMType Package where
-    unpack (Package ptr) = ptr
-    pack = Package
+    unpack (Package ptr) = return ptr
+    pack = return . Package
 
 {# pointer *pmdelta_t as Delta newtype #}
 
 instance ALPMType Delta where
-    unpack (Delta ptr) = ptr
-    pack = Delta
+    unpack (Delta ptr) = return ptr
+    pack = return . Delta
 
 {# pointer *pmgrp_t as Group newtype #}
 
 instance ALPMType Group where
-    unpack (Group ptr) = ptr
-    pack = Group
+    unpack (Group ptr) = return ptr
+    pack = return . Group
 
 {# pointer *pmtrans_t as Transaction newtype #}
 
 instance ALPMType Transaction where
-    unpack (Transaction ptr) = ptr
-    pack = Transaction
+    unpack (Transaction ptr) = return ptr
+    pack = return . Transaction
 
 {# pointer *pmdepend_t as Dependency newtype #}
 
 instance ALPMType Dependency where
-    unpack (Dependency ptr) = ptr
-    pack = Dependency
+    unpack (Dependency ptr) = return ptr
+    pack = return . Dependency
 
 {# pointer *pmdepmissing_t as DependencyMissing newtype #}
 
 instance ALPMType DependencyMissing where
-    unpack (DependencyMissing ptr) = ptr
-    pack = DependencyMissing
+    unpack (DependencyMissing ptr) = return ptr
+    pack = return . DependencyMissing
 
 {# pointer *pmconflict_t as Conflict newtype #}
 
 instance ALPMType Conflict where
-    unpack (Conflict ptr) = ptr
-    pack = Conflict
+    unpack (Conflict ptr) = return ptr
+    pack = return . Conflict
 
 {# pointer *pmfileconflict_t as FileConflict newtype #}
 
 instance ALPMType FileConflict where
-    unpack (FileConflict ptr) = ptr
-    pack = FileConflict
+    unpack (FileConflict ptr) = return ptr
+    pack = return . FileConflict
 
 -- Enums ---------------------------------------------------------------------
 
