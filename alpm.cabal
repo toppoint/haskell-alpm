@@ -12,7 +12,7 @@ Author:        Andreas Baldeau,
 Maintainer:    Andreas Baldeau <andreas@baldeau.net>,
                Daniel Ehlers <danielehlers@mindeye.net>
 Homepage:      http://github.com/baldo/haskell-alpm
-Bug-Reports:   http://github.com/baldo/haskell-alpm
+Bug-Reports:   http://github.com/baldo/haskell-alpm/issues
 Category:      Distribution
 Tested-With:   GHC == 7.0.2
 
