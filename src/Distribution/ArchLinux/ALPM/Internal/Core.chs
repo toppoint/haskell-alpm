@@ -276,6 +276,8 @@ dbGetPKGCache = valueToList {# call db_get_pkgcache #}
 
 -- const char *alpm_pkg_get_filename(pmpkg_t *pkg);
 -- const char *alpm_pkg_get_name(pmpkg_t *pkg);
+pkgGetName :: Package -> ALPM String
+pkgGetName = valueToString {# call pkg_get_name #} 
 -- const char *alpm_pkg_get_version(pmpkg_t *pkg);
 -- const char *alpm_pkg_get_desc(pmpkg_t *pkg);
 -- const char *alpm_pkg_get_url(pmpkg_t *pkg);
