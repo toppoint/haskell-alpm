@@ -45,9 +45,8 @@ getList getter = liftIO $ liftM (List . castPtr) $ getter
 valueToString :: (a -> IO CString) -> a -> ALPM String
 valueToString converter value = liftIO $ converter value >>= peekCString
 
-valueToList :: (a -> IO (Ptr b)) -> a -> ALPM (List c)
-valueToList converter value =
-    liftIO $ liftM (List . castPtr) $ converter value
+valueToList :: IO (Ptr b) -> ALPM (List c)
+valueToList = liftIO . liftM (List . castPtr)  
 
 valueToInt :: (a -> IO CInt) -> a -> ALPM Int
 valueToInt converter value = liftIO $ liftM fromIntegral $ converter value
@@ -261,7 +260,7 @@ databaseUpdate db = setEnum (flip {# call db_update #} db)
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
 
 databaseGetPackageCache :: Database -> ALPM (List Package)
-databaseGetPackageCache = valueToList {# call db_get_pkgcache #}
+databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
@@ -378,9 +377,18 @@ deltaGetSize = valueToInteger {# call delta_get_size #}
 
 -- Group ---------------------------------------------------------------------
 
+
 -- const char *alpm_grp_get_name(const pmgrp_t *grp);
+groupGetName :: Group -> ALPM String
+groupGetName = valueToString {# call grp_get_name #}
 -- alpm_list_t *alpm_grp_get_pkgs(const pmgrp_t *grp);
+groupGetPackages :: Group -> ALPM (List Package)
+groupGetPackages = valueToList . {# call grp_get_pkgs #}
 -- alpm_list_t *alpm_find_grp_pkgs(alpm_list_t *dbs, const char *name);
+findGroupPackages :: List Database -> String -> ALPM (List Group)
+findGroupPackages db str = valueToList . 
+    withCString str $ \cstr ->
+      {# call find_grp_pkgs #} (castPtr $ unList db)  cstr
 
 
 -- Sync ----------------------------------------------------------------------
