@@ -274,19 +274,33 @@ databaeGetPackageCache = valueToList {# call db_get_pkgcache #}
 -- int alpm_pkg_vercmp(const char *a, const char *b);
 -- alpm_list_t *alpm_pkg_compute_requiredby(pmpkg_t *pkg);
 
--- const char *alpm_pkg_get_filename(pmpkg_t *pkg);
+packageGetFilename :: Package -> ALPM FilePath
+packageGetFilename = valueToString {# call pkg_get_filename #}
 
 packageGetName :: Package -> ALPM String
 packageGetName = valueToString {# call pkg_get_name #} 
 
--- const char *alpm_pkg_get_version(pmpkg_t *pkg);
--- const char *alpm_pkg_get_desc(pmpkg_t *pkg);
--- const char *alpm_pkg_get_url(pmpkg_t *pkg);
+packageGetVersion :: Package -> ALPM String
+packageGetVersion = valueToString {# call pkg_get_version #}
+
+packageGetDescription :: Package -> ALPM String
+packageGetDescription = valueToString {# call pkg_get_desc #}
+
+packageGetURL :: Package -> ALPM String
+packageGetURL = valueToString {# call pkg_get_url #}
+
 -- time_t alpm_pkg_get_builddate(pmpkg_t *pkg);
 -- time_t alpm_pkg_get_installdate(pmpkg_t *pkg);
--- const char *alpm_pkg_get_packager(pmpkg_t *pkg);
--- const char *alpm_pkg_get_md5sum(pmpkg_t *pkg);
--- const char *alpm_pkg_get_arch(pmpkg_t *pkg);
+
+packageGetPackager :: Package -> ALPM String
+packageGetPackager = valueToString {# call pkg_get_packager #}
+
+packageGetMd5Sum :: Package -> ALPM String
+packageGetMd5Sum = valueToString {# call pkg_get_md5sum #}
+
+packageGetArchitecture :: Package -> ALPM String
+packageGetArchitecture = valueToString {# call pkg_get_arch #}
+
 -- off_t alpm_pkg_get_size(pmpkg_t *pkg);
 -- off_t alpm_pkg_get_isize(pmpkg_t *pkg);
 -- pmpkgreason_t alpm_pkg_get_reason(pmpkg_t *pkg);
