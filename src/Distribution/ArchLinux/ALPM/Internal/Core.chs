@@ -265,6 +265,8 @@ databaeGetPackageCache = valueToList . {# call db_get_pkgcache #}
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
 -- alpm_list_t *alpm_db_search(pmdb_t *db, const alpm_list_t* needles);
+
+
 -- int alpm_db_set_pkgreason(pmdb_t *db, const char *name, pmpkgreason_t reason);
 
 
@@ -309,17 +311,40 @@ packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 -- off_t alpm_pkg_get_size(pmpkg_t *pkg);
 -- off_t alpm_pkg_get_isize(pmpkg_t *pkg);
 -- pmpkgreason_t alpm_pkg_get_reason(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_licenses(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_groups(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_depends(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_optdepends(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_conflicts(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_provides(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_deltas(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_replaces(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_files(pmpkg_t *pkg);
--- alpm_list_t *alpm_pkg_get_backup(pmpkg_t *pkg);
--- pmdb_t *alpm_pkg_get_db(pmpkg_t *pkg);
+
+packageGetLicenses :: Package -> ALPM (List String)
+packageGetLicenses = valueToList {# call pkg_get_licenses #}
+
+packageGetGroups :: Package -> ALPM (List Group)
+packageGetGroups = valueToList {# call pkg_get_groups #}
+
+packageGetDependencies :: Package -> ALPM (List Dependency)
+packageGetDependencies = valueToList {# call pkg_get_depends #}
+
+packageGetOptionalDependencies :: Package -> ALPM (List Dependency)
+packageGetOptionalDependencies = valueToList {# call pkg_get_optdepends #}
+
+packageGetConflicts :: Package -> ALPM (List Conflict)
+packageGetConflicts = valueToList {# call pkg_get_conflicts #}
+
+packageGetProvides :: Package -> ALPM (List String)
+packageGetProvides = valueToList {# call pkg_get_provides #}
+
+packageGetDeltas :: Package -> ALPM (List Delta)
+packageGetDeltas = valueToList {# call pkg_get_deltas #}
+
+packageGetReplaces :: Package -> ALPM (List String)
+packageGetReplaces = valueToList {# call pkg_get_replaces #}
+
+packageGetFiles :: Package -> ALPM (List FilePath)
+packageGetFiles = valueToList {# call pkg_get_files #}
+
+packageGetBackup :: Package -> ALPM (List String)
+packageGetBackup = valueToList {# call pkg_get_backup #}
+
+packageGetDatabase :: Package -> ALPM Database
+packageGetDatabase = liftIO . {# call pkg_get_db #}
+
 -- void *alpm_pkg_changelog_open(pmpkg_t *pkg);
 -- size_t alpm_pkg_changelog_read(void *ptr, size_t size,
 -- 		const pmpkg_t *pkg, const void *fp);
@@ -328,8 +353,9 @@ packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 -- int alpm_pkg_has_scriptlet(pmpkg_t *pkg);
 
 -- off_t alpm_pkg_download_size(pmpkg_t *newpkg);
--- alpm_list_t *alpm_pkg_unused_deltas(pmpkg_t *pkg);
 
+packageUnusedDeltas :: Package -> ALPM (List Delta)
+packageUnusedDeltas = valueToList {# call pkg_unused_deltas #}
 
 -- Delta ---------------------------------------------------------------------
 
