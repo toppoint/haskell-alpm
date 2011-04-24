@@ -380,17 +380,12 @@ deltaGetSize = valueToInteger . {# call delta_get_size #}
 -- Group ---------------------------------------------------------------------
 
 
--- const char *alpm_grp_get_name(const pmgrp_t *grp);
 groupGetName :: Group -> ALPM String
-<<<<<<< HEAD
 groupGetName = valueToString . {# call grp_get_name #}
-=======
-groupGetName = valueToString {# call grp_get_name #}
->>>>>>> Add Group function bindings.
--- alpm_list_t *alpm_grp_get_pkgs(const pmgrp_t *grp);
+
 groupGetPackages :: Group -> ALPM (List Package)
 groupGetPackages = valueToList . {# call grp_get_pkgs #}
--- alpm_list_t *alpm_find_grp_pkgs(alpm_list_t *dbs, const char *name);
+
 findGroupPackages :: List Database -> String -> ALPM (List Group)
 findGroupPackages db str = valueToList . 
     withCString str $ \cstr ->
