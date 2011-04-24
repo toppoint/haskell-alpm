@@ -10,10 +10,15 @@ import Distribution.ArchLinux.ALPM
 
 import Util
 
+-- main ----------------------------------------------------------------------
+
 main :: IO ()
 main = do
     ec <- runTest allHTFTests
     exitWith ec
+
+
+-- Helper --------------------------------------------------------------------
 
 alpmTest :: ALPMTest Bool -> Assertion
 alpmTest test = do
@@ -25,6 +30,24 @@ alpmTest test = do
         Right b ->
             assertBool b
 
+filePathIsNothingTest :: ALPMTest (Maybe FilePath) -> Assertion
+filePathIsNothingTest getter = alpmTest $ do
+    fp <- getter
+    return $ isNothing fp
+
+getAndSetFilePathTest
+    :: (FilePath -> ALPMTest ())
+    -> ALPMTest (Maybe FilePath)
+    -> Assertion
+getAndSetFilePathTest setter getter = alpmTest $ do
+    let fp = "/tmp/"
+    setter fp
+    mfp <- getter
+    return $ mfp == Just fp
+
+
+-- Tests ---------------------------------------------------------------------
+
 test_initialize_release :: Assertion
 test_initialize_release = alpmTest $
     return True
@@ -34,29 +57,17 @@ test_getVersion = alpmTest $ do
     version <- getVersion
     return $ not $ null version
 
-test_optionGetRoot :: Assertion
-test_optionGetRoot = alpmTest $ do
-    root <- optionGetRoot
-    return $ isNothing root
+test_optionRootNothing :: Assertion
+test_optionRootNothing = filePathIsNothingTest optionGetRoot
 
-test_optionSetRoot :: Assertion
-test_optionSetRoot = alpmTest $ do
-    let root = "/tmp/"
-    optionSetRoot root
-    mRoot <- optionGetRoot
-    return $ mRoot == Just root
+test_optionRoot :: Assertion
+test_optionRoot = getAndSetFilePathTest optionSetRoot optionGetRoot
 
-test_optionGetDBPath :: Assertion
-test_optionGetDBPath = alpmTest $ do
-    dbPath <- optionGetDBPath
-    return $ isNothing dbPath
+test_optionDBPathNothing :: Assertion
+test_optionDBPathNothing = filePathIsNothingTest optionGetDBPath
 
-test_optionSetDBPath :: Assertion
-test_optionSetDBPath = alpmTest $ do
-    let dbPath = "/tmp/"
-    optionSetDBPath dbPath
-    mDBPath <- optionGetDBPath
-    return $ mDBPath == Just dbPath
+test_optionDBPath :: Assertion
+test_optionDBPath = getAndSetFilePathTest optionSetDBPath optionGetDBPath
 
 {-
 optionGetCacheDirs :: IO (ALPMList a)
@@ -65,18 +76,11 @@ optionSetCacheDirs :: ALPMList a -> IO ()
 optionRemoveCacheDir :: String -> IO (Maybe Error)
 -}
 
-test_optionGetLogFile :: Assertion
-test_optionGetLogFile = alpmTest $ do
-    logFile <- optionGetLogFile
-    return $ isNothing logFile
+test_optionLogFileNothing :: Assertion
+test_optionLogFileNothing = filePathIsNothingTest optionGetLogFile
 
-test_optionSetLogFile :: Assertion
-test_optionSetLogFile = alpmTest $ do
-    -- Perhaps this should fail, since /tmp/ is a directory! 
-    let logFile = "/tmp/"
-    optionSetLogFile logFile
-    mLogFile <- optionGetLogFile
-    return $ mLogFile == Just logFile
+test_optionLogFile :: Assertion
+test_optionLogFile = getAndSetFilePathTest optionSetLogFile optionGetLogFile
 
 {-
 optionGetLockFile :: IO String
