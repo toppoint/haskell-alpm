@@ -254,7 +254,7 @@ databaseUpdate db = setEnum (flip {# call db_update #} db)
 -- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
 -- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
 
-dbGetPKGCache :: MonadALPM m => Database -> m (List a)
+dbGetPKGCache :: MonadALPM m => Database -> m (List Package)
 dbGetPKGCache = valueToList {# call db_get_pkgcache #}
 
 -- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
