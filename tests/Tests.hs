@@ -84,11 +84,12 @@ test_optionRootNothing = stringIsNothingTest optionGetRoot
 test_optionRoot :: Assertion
 test_optionRoot = getAndSetFilePathTest optionSetRoot optionGetRoot
 
-test_optionDBPathNothing :: Assertion
-test_optionDBPathNothing = stringIsNothingTest optionGetDBPath
+test_optionDatabasePathNothing :: Assertion
+test_optionDatabasePathNothing = stringIsNothingTest optionGetDatabasePath
 
-test_optionDBPath :: Assertion
-test_optionDBPath = getAndSetFilePathTest optionSetDBPath optionGetDBPath
+test_optionDatabasePath :: Assertion
+test_optionDatabasePath =
+    getAndSetFilePathTest optionSetDatabasePath optionGetDatabasePath
 
 {-
 optionGetCacheDirs :: IO (ALPMList a)
