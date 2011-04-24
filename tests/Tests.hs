@@ -8,8 +8,6 @@ import Test.Framework
 
 import Distribution.ArchLinux.ALPM
 
-import Util
-
 -- main ----------------------------------------------------------------------
 
 main :: IO ()
@@ -20,7 +18,7 @@ main = do
 
 -- Helper --------------------------------------------------------------------
 
-alpmTest :: ALPMTest Bool -> Assertion
+alpmTest :: ALPM Bool -> Assertion
 alpmTest test = do
     r <- alpm test
     case r of
@@ -30,14 +28,14 @@ alpmTest test = do
         Right b ->
             assertBool b
 
-filePathIsNothingTest :: ALPMTest (Maybe FilePath) -> Assertion
+filePathIsNothingTest :: ALPM (Maybe FilePath) -> Assertion
 filePathIsNothingTest getter = alpmTest $ do
     fp <- getter
     return $ isNothing fp
 
 getAndSetFilePathTest
-    :: (FilePath -> ALPMTest ())
-    -> ALPMTest (Maybe FilePath)
+    :: (FilePath -> ALPM ())
+    -> ALPM (Maybe FilePath)
     -> Assertion
 getAndSetFilePathTest setter getter = alpmTest $ do
     let fp = "/tmp/"
