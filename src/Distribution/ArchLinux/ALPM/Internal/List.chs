@@ -143,7 +143,10 @@ fromList list = do
             return $ x : lst
           Nothing -> return []
 
---toList :: ALPMType a => [a] -> IO (List a)
+toList :: ALPMType a => [a] -> IO (List a)
+toList lst = do
+  list <- foldM addList (List $ castPtr nullPtr) lst
+  return list
 
 -- Misc -----------------------------------------------------------------------
 
