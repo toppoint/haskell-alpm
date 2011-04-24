@@ -321,7 +321,7 @@ packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 packageGetLicenses :: Package -> ALPM [String]
 packageGetLicenses = valueToList . {# call pkg_get_licenses #}
 
-packageGetGroups :: Package -> ALPM [Group]
+packageGetGroups :: Package -> ALPM [String]
 packageGetGroups = valueToList . {# call pkg_get_groups #}
 
 packageGetDependencies :: Package -> ALPM [Dependency]
