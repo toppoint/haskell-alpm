@@ -132,10 +132,11 @@ optionRemoveIgnoreGrp :: String -> IO (Maybe Error)
 -}
 
 test_optionArchNothing :: Assertion
-test_optionArchNothing = stringIsNothingTest optionGetArch
+test_optionArchNothing = stringIsNothingTest optionGetArchitecture
 
 test_optionArch :: Assertion
-test_optionArch = getAndSetStringTest optionSetArch optionGetArch "i686"
+test_optionArch =
+    getAndSetStringTest optionSetArchitecture optionGetArchitecture "i686"
 
 test_optionUseDelta :: Assertion
 test_optionUseDelta = getAndSetBool optionSetUserDelta optionGetUseDelta

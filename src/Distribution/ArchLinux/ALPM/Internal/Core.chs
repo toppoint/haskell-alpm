@@ -203,11 +203,11 @@ optionSetIgnoreGrps = setList {# call option_set_ignoregrps #}
 optionRemoveIgnoreGrp :: String -> ALPM ()
 optionRemoveIgnoreGrp = setString {# call option_remove_ignoregrp #}
 
-optionGetArch :: ALPM (Maybe String)
-optionGetArch = getString {# call option_get_arch #}
+optionGetArchitecture :: ALPM (Maybe String)
+optionGetArchitecture = getString {# call option_get_arch #}
 
-optionSetArch :: String -> ALPM ()
-optionSetArch = setString_ {# call option_set_arch #}
+optionSetArchitecture :: String -> ALPM ()
+optionSetArchitecture = setString_ {# call option_set_arch #}
 
 optionGetUseDelta :: ALPM Bool
 optionGetUseDelta = getBool {# call option_get_usedelta #}
