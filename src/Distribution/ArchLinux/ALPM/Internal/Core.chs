@@ -43,7 +43,7 @@ getList :: IO (Ptr a) -> ALPM (List b)
 getList getter = liftIO $ liftM (List . castPtr) $ getter
 
 valueToString :: IO CString -> ALPM String
-valueToString f = liftIO $ peekCString =<< f
+valueToString = liftIO . (=<<) peekCString
 
 valueToList :: IO (Ptr b) -> ALPM (List c)
 valueToList = liftIO . liftM (List . castPtr)  
