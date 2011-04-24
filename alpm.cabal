@@ -7,8 +7,10 @@ License:       GPL
 License-File:  LICENSE
 Build-Type:    Simple
 Cabal-Version: >=1.10
-Author:        Andreas Baldeau
-Maintainer:    Andreas Baldeau <andreas@baldeau.net>
+Author:        Andreas Baldeau,
+               Daniel Ehlers
+Maintainer:    Andreas Baldeau <andreas@baldeau.net>,
+               Daniel Ehlers <danielehlers@mindeye.net>
 Homepage:      http://github.com/baldo/haskell-alpm
 Bug-Reports:   http://github.com/baldo/haskell-alpm
 Category:      Graphics
