@@ -334,23 +334,18 @@ packageGetArchitecture = valueToString {# call pkg_get_arch #}
 
 -- Delta ---------------------------------------------------------------------
 
--- const char *alpm_delta_get_from(pmdelta_t *delta);
 deltaGetFrom :: Delta -> ALPM String
 deltaGetFrom = valueToString {# call delta_get_from #}
 
--- const char *alpm_delta_get_to(pmdelta_t *delta);
 deltaGetTo :: Delta -> ALPM String
 deltaGetTo = valueToString {# call delta_get_to #}
 
--- const char *alpm_delta_get_filename(pmdelta_t *delta);
 deltaGetFilename :: Delta -> ALPM FilePath
 deltaGetFilename = valueToString {# call delta_get_filename #}
 
--- const char *alpm_delta_get_md5sum(pmdelta_t *delta);
 deltaGetMD5sum :: Delta -> ALPM String
 deltaGetMD5sum = valueToString {# call delta_get_md5sum #}
 
--- off_t alpm_delta_get_size(pmdelta_t *delta);
 deltaGetSize :: Delta -> ALPM Integer
 deltaGetSize = valueToInteger {# call delta_get_size #}
 
