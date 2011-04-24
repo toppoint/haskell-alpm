@@ -28,41 +28,63 @@ alpmTest test = do
         Right b ->
             assertBool b
 
-filePathIsNothingTest :: ALPM (Maybe FilePath) -> Assertion
-filePathIsNothingTest getter = alpmTest $ do
-    fp <- getter
-    return $ isNothing fp
+success :: Assertion
+success = alpmTest $ return True
+
+stringIsNothingTest :: ALPM (Maybe String) -> Assertion
+stringIsNothingTest getter = alpmTest $ do
+    str <- getter
+    return $ isNothing str
+
+getAndSetStringTest
+    :: (String -> ALPM ())
+    -> ALPM (Maybe String)
+    -> String
+    -> Assertion
+getAndSetStringTest setter getter str = alpmTest $ do
+    setter str
+    mstr <- getter
+    return $ mstr == Just str
 
 getAndSetFilePathTest
     :: (FilePath -> ALPM ())
     -> ALPM (Maybe FilePath)
     -> Assertion
-getAndSetFilePathTest setter getter = alpmTest $ do
-    let fp = "/tmp/"
-    setter fp
-    mfp <- getter
-    return $ mfp == Just fp
+getAndSetFilePathTest setter getter =
+    getAndSetStringTest setter getter "/tmp/"
+
+getStringNotNullTest :: ALPM String -> Assertion
+getStringNotNullTest getter = alpmTest $ do
+    str <- getter
+    return $ not $ null str
+
+getAndSetBool :: (Bool -> ALPM ()) -> ALPM Bool -> Assertion
+getAndSetBool setter getter = alpmTest $ do
+    setter True
+    b1 <- getter
+    setter False
+    b2 <- getter
+    setter True
+    b3 <- getter
+    return $ b1 && not b2 && b3
 
 
 -- Tests ---------------------------------------------------------------------
 
 test_initialize_release :: Assertion
-test_initialize_release = alpmTest $
-    return True
+test_initialize_release = success
 
 test_getVersion :: Assertion
-test_getVersion = alpmTest $ do
-    version <- getVersion
-    return $ not $ null version
+test_getVersion = getStringNotNullTest getVersion
 
 test_optionRootNothing :: Assertion
-test_optionRootNothing = filePathIsNothingTest optionGetRoot
+test_optionRootNothing = stringIsNothingTest optionGetRoot
 
 test_optionRoot :: Assertion
 test_optionRoot = getAndSetFilePathTest optionSetRoot optionGetRoot
 
 test_optionDBPathNothing :: Assertion
-test_optionDBPathNothing = filePathIsNothingTest optionGetDBPath
+test_optionDBPathNothing = stringIsNothingTest optionGetDBPath
 
 test_optionDBPath :: Assertion
 test_optionDBPath = getAndSetFilePathTest optionSetDBPath optionGetDBPath
@@ -75,18 +97,18 @@ optionRemoveCacheDir :: String -> IO (Maybe Error)
 -}
 
 test_optionLogFileNothing :: Assertion
-test_optionLogFileNothing = filePathIsNothingTest optionGetLogFile
+test_optionLogFileNothing = stringIsNothingTest optionGetLogFile
 
 test_optionLogFile :: Assertion
 test_optionLogFile = getAndSetFilePathTest optionSetLogFile optionGetLogFile
 
+test_optionLockFileNothig :: Assertion
+test_optionLockFileNothig = stringIsNothingTest optionGetLockFile
+
+test_optionSyslog :: Assertion
+test_optionSyslog = getAndSetBool optionSetUseSyslog optionGetUseSyslog
+
 {-
-optionGetLockFile :: IO String
--- /* no set_lockfile, path is determined from dbpath */
-
-optionGetUseSyslog :: IO Bool
-optionSetUseSyslog :: Bool -> IO ()
-
 optionGetNoUpgrades :: IO (ALPMList a)
 optionAddNoUpgrade :: String -> IO ()
 optionSetNoUpgrades :: (ALPMList a) -> IO ()
@@ -106,13 +128,17 @@ optionGetIgnoreGrps :: IO (ALPMList a)
 optionAddIgnoreGrp :: String -> IO ()
 optionSetIgnoreGrps :: (ALPMList a) -> IO ()
 optionRemoveIgnoreGrp :: String -> IO (Maybe Error)
-
-optionGetArch :: IO String
-optionSetArch :: String -> IO ()
-
-optionGetUseDelta :: IO Bool
-optionSetUserDelta :: Bool -> IO ()
-
-optionGetCheckSpace :: IO Bool
-optionSetCheckSpace :: Bool -> IO ()
 -}
+
+test_optionArchNothing :: Assertion
+test_optionArchNothing = stringIsNothingTest optionGetArch
+
+test_optionArch :: Assertion
+test_optionArch = getAndSetStringTest optionSetArch optionGetArch "i686"
+
+test_optionUseDelta :: Assertion
+test_optionUseDelta = getAndSetBool optionSetUserDelta optionGetUseDelta
+
+test_optionCheckSpace :: Assertion
+test_optionCheckSpace = getAndSetBool optionSetCheckSpace optionGetCheckSpace
+
