@@ -231,8 +231,10 @@ optionGetCheckSpace = getBool {# call option_get_checkspace #}
 optionSetCheckSpace :: Bool -> ALPM ()
 optionSetCheckSpace = setBool {# call option_set_checkspace #}
 
+optionGetLocalDatabase :: ALPM Database
+optionGetLocalDatabase = liftIO {# call option_get_localdb #}
+
 -- db.h
--- pmdb_t *alpm_option_get_localdb(void);
 -- alpm_list_t *alpm_option_get_syncdbs(void);
 
 
