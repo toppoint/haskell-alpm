@@ -46,13 +46,13 @@ valueToString :: IO CString -> ALPM String
 valueToString = liftIO . (=<<) peekCString
 
 valueToList :: IO (Ptr b) -> ALPM (List c)
-valueToList = liftIO . liftM (List . castPtr)  
+valueToList = liftIO . liftM (List . castPtr)
 
-valueToInt :: (a -> IO CInt) -> a -> ALPM Int
-valueToInt converter value = liftIO $ liftM fromIntegral $ converter value
+valueToInt :: IO CInt -> ALPM Int
+valueToInt = liftIO . liftM fromIntegral
 
-valueToInteger :: (a -> IO CLong) -> a -> ALPM Integer
-valueToInteger converter value = liftIO $ liftM fromIntegral $ converter value
+valueToInteger :: IO CLong -> ALPM Integer
+valueToInteger = liftIO . liftM fromIntegral
 
 setEnum :: Enum e => (CInt -> IO CInt) -> e -> ALPM ()
 setEnum setter enum =
@@ -374,7 +374,7 @@ deltaGetMD5sum :: Delta -> ALPM String
 deltaGetMD5sum = valueToString . {# call delta_get_md5sum #}
 
 deltaGetSize :: Delta -> ALPM Integer
-deltaGetSize = valueToInteger {# call delta_get_size #}
+deltaGetSize = valueToInteger . {# call delta_get_size #}
 
 
 -- Group ---------------------------------------------------------------------
