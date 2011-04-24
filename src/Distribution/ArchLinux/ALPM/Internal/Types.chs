@@ -38,37 +38,64 @@ import Foreign
 -- Packable Type -------------------------------------------------------------
 
 class ALPMType a where
-  unpack :: a -> Ptr a
-  pack   :: Ptr a -> a 
+    unpack :: a -> Ptr a
+    pack   :: Ptr a -> a 
 
 -- Types ---------------------------------------------------------------------
 
 {# pointer *pmdb_t as Database newtype #}
 
 instance ALPMType Database where
-  unpack (Database ptr) = ptr
+    unpack (Database ptr) = ptr
+    pack = Database
 
 {# pointer *pmpkg_t as Package newtype #}
 
 instance ALPMType Package where
-  unpack (Package ptr) = ptr
+    unpack (Package ptr) = ptr
+    pack = Package
 
 {# pointer *pmdelta_t as Delta newtype #}
 
 instance ALPMType Delta where
-  unpack (Delta ptr) = ptr
+    unpack (Delta ptr) = ptr
+    pack = Delta
 
 {# pointer *pmgrp_t as Group newtype #}
 
+instance ALPMType Group where
+    unpack (Group ptr) = ptr
+    pack = Group
+
 {# pointer *pmtrans_t as Transaction newtype #}
+
+instance ALPMType Transaction where
+    unpack (Transaction ptr) = ptr
+    pack = Transaction
 
 {# pointer *pmdepend_t as Dependency newtype #}
 
+instance ALPMType Dependency where
+    unpack (Dependency ptr) = ptr
+    pack = Dependency
+
 {# pointer *pmdepmissing_t as DependencyMissing newtype #}
+
+instance ALPMType DependencyMissing where
+    unpack (DependencyMissing ptr) = ptr
+    pack = DependencyMissing
 
 {# pointer *pmconflict_t as Conflict newtype #}
 
+instance ALPMType Conflict where
+    unpack (Conflict ptr) = ptr
+    pack = Conflict
+
 {# pointer *pmfileconflict_t as FileConflict newtype #}
+
+instance ALPMType FileConflict where
+    unpack (FileConflict ptr) = ptr
+    pack = FileConflict
 
 -- Enums ---------------------------------------------------------------------
 
