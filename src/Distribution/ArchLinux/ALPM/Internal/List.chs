@@ -81,7 +81,7 @@ removeList lst needle sort = do
     ptr <- liftM castPtr $ peek dataPtr
     return (pack ptr,newList)
 
-{-
+{- TODO
 alpm_list_t *alpm_list_remove_str(alpm_list_t *haystack, const char *needle, char **data);
 -}
 
@@ -94,7 +94,7 @@ strdupList = liftM List . alpm_list_strdup . unList
 copyList :: List a -> IO (List a)
 copyList =  liftM List . alpm_list_copy . unList
 
--- Do we really need this function, for this the type parameter of List
+-- TODO - Do we really need this function, for this the type parameter of List
 -- should be an instance of Storable   
 -- alpm_list_t *alpm_list_copy_data(const alpm_list_t *list, size_t size);
 
@@ -117,8 +117,33 @@ nextList = liftM List . alpm_list_next . unList
 lastList :: List a -> IO (List a)
 lastList = liftM List . alpm_list_last . unList
 
-getDataList :: ALPMType a => List a -> IO a
-getDataList = liftM pack . alpm_list_getdata . unList
+getDataList :: ALPMType a => List a -> IO (Maybe a)
+getDataList list = do
+  element <- alpm_list_getdata $ unList list
+  if element == nullPtr 
+    then return Nothing
+    else return . Just $ pack element
+
+fromList :: ALPMType a => List a -> IO [a]
+fromList list = do
+  -- rewind list
+  flist <- firstList list
+  -- extract elements
+  whileJust ( \lst -> do
+    el <- getDataList lst
+    lst' <- nextList lst
+    return (el,lst')
+    ) flist
+ where whileJust :: (b -> IO (Maybe a,b)) -> b -> IO [a]
+       whileJust f null = do
+        (mEntry,null') <- f null 
+        case mEntry of
+          Just x  -> do 
+            lst <- whileJust f null'
+            return $ x : lst
+          Nothing -> return []
+
+--toList :: ALPMType a => [a] -> IO (List a)
 
 -- Misc -----------------------------------------------------------------------
 
@@ -133,7 +158,7 @@ findList list needle sort = do
     then return Nothing
     else return .Just $ pack needleData
 
-{-
+{- TODO
 void *alpm_list_find_ptr(const alpm_list_t *haystack, const void *needle);
 char *alpm_list_find_str(const alpm_list_t *haystack, const char *needle);
 alpm_list_t *alpm_list_diff(const alpm_list_t *lhs, const alpm_list_t *rhs, alpm_list_fn_cmp fn);
