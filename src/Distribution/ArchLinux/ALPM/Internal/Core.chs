@@ -42,8 +42,8 @@ setList setter = liftIO . setter . castPtr . unList
 getList :: IO (Ptr a) -> ALPM (List b)
 getList getter = liftIO $ liftM (List . castPtr) $ getter
 
-valueToString :: (a -> IO CString) -> a -> ALPM String
-valueToString converter value = liftIO $ converter value >>= peekCString
+valueToString :: IO CString -> ALPM String
+valueToString f = liftIO $ peekCString =<< f
 
 valueToList :: IO (Ptr b) -> ALPM (List c)
 valueToList = liftIO . liftM (List . castPtr)  
@@ -245,10 +245,10 @@ databaseUnregisterAll :: ALPM ()
 databaseUnregisterAll = withErrorHandling {# call db_unregister_all #}
 
 databaseGetName :: Database -> ALPM String
-databaseGetName = valueToString {# call alpm_db_get_name #}
+databaseGetName = valueToString . {# call alpm_db_get_name #}
 
 databaseGetUrl :: Database -> ALPM String
-databaseGetUrl = valueToString {# call alpm_db_get_url #}
+databaseGetUrl = valueToString . {# call alpm_db_get_url #}
 
 databaseSetServer :: Database -> String -> ALPM ()
 databaseSetServer db = setString $ {# call db_setserver #} db
@@ -280,31 +280,31 @@ databaeGetPackageCache = valueToList . {# call db_get_pkgcache #}
 -- alpm_list_t *alpm_pkg_compute_requiredby(pmpkg_t *pkg);
 
 packageGetFilename :: Package -> ALPM FilePath
-packageGetFilename = valueToString {# call pkg_get_filename #}
+packageGetFilename = valueToString . {# call pkg_get_filename #}
 
 packageGetName :: Package -> ALPM String
-packageGetName = valueToString {# call pkg_get_name #} 
+packageGetName = valueToString . {# call pkg_get_name #} 
 
 packageGetVersion :: Package -> ALPM String
-packageGetVersion = valueToString {# call pkg_get_version #}
+packageGetVersion = valueToString . {# call pkg_get_version #}
 
 packageGetDescription :: Package -> ALPM String
-packageGetDescription = valueToString {# call pkg_get_desc #}
+packageGetDescription = valueToString . {# call pkg_get_desc #}
 
 packageGetURL :: Package -> ALPM String
-packageGetURL = valueToString {# call pkg_get_url #}
+packageGetURL = valueToString . {# call pkg_get_url #}
 
 -- time_t alpm_pkg_get_builddate(pmpkg_t *pkg);
 -- time_t alpm_pkg_get_installdate(pmpkg_t *pkg);
 
 packageGetPackager :: Package -> ALPM String
-packageGetPackager = valueToString {# call pkg_get_packager #}
+packageGetPackager = valueToString . {# call pkg_get_packager #}
 
 packageGetMd5Sum :: Package -> ALPM String
-packageGetMd5Sum = valueToString {# call pkg_get_md5sum #}
+packageGetMd5Sum = valueToString . {# call pkg_get_md5sum #}
 
 packageGetArchitecture :: Package -> ALPM String
-packageGetArchitecture = valueToString {# call pkg_get_arch #}
+packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 
 -- off_t alpm_pkg_get_size(pmpkg_t *pkg);
 -- off_t alpm_pkg_get_isize(pmpkg_t *pkg);
@@ -334,16 +334,16 @@ packageGetArchitecture = valueToString {# call pkg_get_arch #}
 -- Delta ---------------------------------------------------------------------
 
 deltaGetFrom :: Delta -> ALPM String
-deltaGetFrom = valueToString {# call delta_get_from #}
+deltaGetFrom = valueToString . {# call delta_get_from #}
 
 deltaGetTo :: Delta -> ALPM String
-deltaGetTo = valueToString {# call delta_get_to #}
+deltaGetTo = valueToString . {# call delta_get_to #}
 
 deltaGetFilename :: Delta -> ALPM FilePath
-deltaGetFilename = valueToString {# call delta_get_filename #}
+deltaGetFilename = valueToString . {# call delta_get_filename #}
 
 deltaGetMD5sum :: Delta -> ALPM String
-deltaGetMD5sum = valueToString {# call delta_get_md5sum #}
+deltaGetMD5sum = valueToString . {# call delta_get_md5sum #}
 
 deltaGetSize :: Delta -> ALPM Integer
 deltaGetSize = valueToInteger {# call delta_get_size #}
@@ -354,7 +354,7 @@ deltaGetSize = valueToInteger {# call delta_get_size #}
 
 -- const char *alpm_grp_get_name(const pmgrp_t *grp);
 groupGetName :: Group -> ALPM String
-groupGetName = valueToString {# call grp_get_name #}
+groupGetName = valueToString . {# call grp_get_name #}
 -- alpm_list_t *alpm_grp_get_pkgs(const pmgrp_t *grp);
 groupGetPackages :: Group -> ALPM (List Package)
 groupGetPackages = valueToList . {# call grp_get_pkgs #}
@@ -402,35 +402,35 @@ findGroupPackages db str = valueToList .
 -- pmpkg_t *alpm_find_dbs_satisfier(alpm_list_t *dbs, const char *depstring);
 
 missGetTarget :: DependencyMissing -> ALPM String
-missGetTarget = valueToString {# call miss_get_target #}
+missGetTarget = valueToString . {# call miss_get_target #}
 
 missGetDependency :: DependencyMissing -> ALPM Dependency
 missGetDependency = liftIO . {# call miss_get_dep #}
 
 missGetCausingPackage :: DependencyMissing -> ALPM String
-missGetCausingPackage = valueToString {# call miss_get_causingpkg #}
+missGetCausingPackage = valueToString . {# call miss_get_causingpkg #}
 
 -- alpm_list_t *alpm_checkconflicts(alpm_list_t *pkglist);
 
 conflictGetPackage1 :: Conflict -> ALPM String
-conflictGetPackage1 = valueToString {# call conflict_get_package1 #}
+conflictGetPackage1 = valueToString . {# call conflict_get_package1 #}
 
 conflictGetPackage2 :: Conflict -> ALPM String
-conflictGetPackage2 = valueToString {# call conflict_get_package2 #}
+conflictGetPackage2 = valueToString . {# call conflict_get_package2 #}
 
 conflictGetReason :: Conflict -> ALPM String
-conflictGetReason = valueToString {# call conflict_get_reason #}
+conflictGetReason = valueToString . {# call conflict_get_reason #}
 
 -- pmdepmod_t alpm_dep_get_mod(const pmdepend_t *dep);
 
 dependencyGetName :: Dependency -> ALPM String
-dependencyGetName = valueToString {# call dep_get_name #}
+dependencyGetName = valueToString . {# call dep_get_name #}
 
 dependencyGetVersion :: Dependency -> ALPM String
-dependencyGetVersion = valueToString {# call dep_get_version #}
+dependencyGetVersion = valueToString . {# call dep_get_version #}
 
 dependencyComputeString :: Dependency -> ALPM String
-dependencyComputeString = valueToString {# call dep_compute_string #}
+dependencyComputeString = valueToString . {# call dep_compute_string #}
 
 
 -- File conflicts ------------------------------------------------------------
