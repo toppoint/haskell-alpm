@@ -36,11 +36,11 @@ setString setter str =
 setString_ :: (CString -> IO ()) -> String -> ALPM ()
 setString_ setter str = liftIO $ newCString str >>= setter
 
-setList :: (Ptr a -> IO ()) -> List b -> ALPM ()
-setList setter = liftIO . setter . castPtr . unList
+setList :: ALPMType b => (Ptr a -> IO ()) -> [b] -> ALPM ()
+setList setter lst = liftIO $ (setter . castPtr . unList) =<< toList lst 
 
-getList :: IO (Ptr a) -> ALPM (List b)
-getList getter = liftIO $ liftM (List . castPtr) $ getter
+getList :: ALPMType b => IO (Ptr a) -> ALPM [b]
+getList getter = liftIO $ getter >>= (fromList . List . castPtr)
 
 valueToString :: IO CString -> ALPM String
 valueToString = liftIO . (=<<) peekCString
@@ -142,7 +142,7 @@ optionGetCacheDirs = liftIO $
 optionAddCacheDir :: FilePath -> ALPM ()
 optionAddCacheDir = setString {# call option_add_cachedir #}
 
-optionSetCacheDirs :: List a -> ALPM ()
+optionSetCacheDirs :: [FilePath] -> ALPM ()
 optionSetCacheDirs = setList {# call option_set_cachedirs #}
 
 optionRemoveCacheDir :: FilePath -> ALPM ()
@@ -165,49 +165,49 @@ optionGetUseSyslog = getBool {# call option_get_usesyslog #}
 optionSetUseSyslog :: Bool -> ALPM ()
 optionSetUseSyslog = setBool {# call option_set_usesyslog #}
 
-optionGetNoUpgrades :: ALPM (List a)
+optionGetNoUpgrades :: ALPM [String]
 optionGetNoUpgrades = getList {# call option_get_noupgrades #}
 
 optionAddNoUpgrade :: String -> ALPM ()
 optionAddNoUpgrade = setString_ {# call option_add_noupgrade #}
 
-optionSetNoUpgrades :: (List a) -> ALPM ()
+optionSetNoUpgrades :: [String] -> ALPM ()
 optionSetNoUpgrades = setList {# call option_set_noupgrades #}
 
 optionRemoveNoUpgrade :: String -> ALPM ()
 optionRemoveNoUpgrade = setString {# call option_remove_noupgrade #}
 
-optionGetNoExtracts :: ALPM (List a)
+optionGetNoExtracts :: ALPM [String]
 optionGetNoExtracts = getList {# call option_get_noextracts #}
 
 optionAddNoExtract :: String -> ALPM ()
 optionAddNoExtract = setString_ {# call option_add_noextract #}
 
-optionSetNoExtracts :: List a -> ALPM ()
+optionSetNoExtracts :: [String] -> ALPM ()
 optionSetNoExtracts = setList {# call option_set_noextracts #}
 
 optionRemoveNoExtract :: String -> ALPM ()
 optionRemoveNoExtract = setString {# call option_remove_noextract #}
 
-optionGetIgnorePkgs :: ALPM (List a)
+optionGetIgnorePkgs :: ALPM [String]
 optionGetIgnorePkgs = getList {# call option_get_ignorepkgs #}
 
 optionAddIgnorePkg :: String -> ALPM ()
 optionAddIgnorePkg = setString_ {# call option_add_ignorepkg #}
 
-optionSetIgnorePkgs :: List a -> ALPM ()
+optionSetIgnorePkgs :: [String] -> ALPM ()
 optionSetIgnorePkgs = setList {# call option_set_ignorepkgs #}
 
 optionRemoveIgnorePkg :: String -> ALPM ()
 optionRemoveIgnorePkg = setString {# call option_remove_ignorepkg #}
 
-optionGetIgnoreGrps :: ALPM (List a)
+optionGetIgnoreGrps :: ALPM [String]
 optionGetIgnoreGrps = getList {# call option_get_ignoregrps #}
 
 optionAddIgnoreGrp :: String -> ALPM ()
 optionAddIgnoreGrp = setString_ {# call option_add_ignoregrp #}
 
-optionSetIgnoreGrps :: (List a) -> ALPM ()
+optionSetIgnoreGrps :: [String] -> ALPM ()
 optionSetIgnoreGrps = setList {# call option_set_ignoregrps #}
 
 optionRemoveIgnoreGrp :: String -> ALPM ()
