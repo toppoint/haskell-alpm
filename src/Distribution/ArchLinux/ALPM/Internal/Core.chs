@@ -275,9 +275,10 @@ databaeGetPackageCache = valueToList {# call db_get_pkgcache #}
 -- alpm_list_t *alpm_pkg_compute_requiredby(pmpkg_t *pkg);
 
 -- const char *alpm_pkg_get_filename(pmpkg_t *pkg);
--- const char *alpm_pkg_get_name(pmpkg_t *pkg);
-pkgGetName :: Package -> ALPM String
-pkgGetName = valueToString {# call pkg_get_name #} 
+
+packageGetName :: Package -> ALPM String
+packageGetName = valueToString {# call pkg_get_name #} 
+
 -- const char *alpm_pkg_get_version(pmpkg_t *pkg);
 -- const char *alpm_pkg_get_desc(pmpkg_t *pkg);
 -- const char *alpm_pkg_get_url(pmpkg_t *pkg);
