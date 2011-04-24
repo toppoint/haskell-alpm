@@ -129,11 +129,11 @@ optionGetRoot = getString {# call option_get_root #}
 optionSetRoot :: FilePath -> ALPM ()
 optionSetRoot = setString {# call option_set_root #}
 
-optionGetDBPath :: ALPM (Maybe FilePath)
-optionGetDBPath = getString {# call option_get_dbpath #}
+optionGetDatabasePath :: ALPM (Maybe FilePath)
+optionGetDatabasePath = getString {# call option_get_dbpath #}
 
-optionSetDBPath :: FilePath -> ALPM ()
-optionSetDBPath = setString {# call option_set_dbpath #}
+optionSetDatabasePath :: FilePath -> ALPM ()
+optionSetDatabasePath = setString {# call option_set_dbpath #}
 
 optionGetCacheDirs :: ALPM (List a)
 optionGetCacheDirs = liftIO $
