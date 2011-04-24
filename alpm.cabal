@@ -41,6 +41,9 @@ Test-Suite Tests
         HUnit == 1.2.*,
         HTF == 0.7.*
 
+    Ghc-Options:
+        -Wall
+
 Library
     Hs-Source-Dirs:
         src
