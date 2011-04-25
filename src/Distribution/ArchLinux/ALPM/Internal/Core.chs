@@ -36,17 +36,17 @@ setString setter str =
 setString_ :: (CString -> IO ()) -> String -> ALPM ()
 setString_ setter str = liftIO $ newCString str >>= setter
 
-setList :: ALPMType b => (Ptr a -> IO ()) -> [b] -> ALPM ()
+setList :: ALPMType b => (Ptr a -> IO c) -> [b] -> ALPM c
 setList setter lst = liftIO $ (setter . castPtr . unList) =<< toList lst 
-
-getList :: ALPMType b => IO (Ptr a) -> ALPM [b]
-getList getter = liftIO $ getter >>= (fromList . List . castPtr)
 
 valueToString :: IO CString -> ALPM String
 valueToString = liftIO . (=<<) peekCString
 
 valueToList :: ALPMType c => IO (Ptr b) -> ALPM ([c])
 valueToList = liftIO . (=<<) fromList . (liftM (List . castPtr))
+
+valueToListALPM :: ALPMType b => ALPM (Ptr a) -> ALPM [b]
+valueToListALPM = (=<<) (\l -> liftIO (fromList . List $ castPtr l))
 
 valueToInt :: IO CInt -> ALPM Int
 valueToInt = liftIO . liftM fromIntegral
@@ -175,7 +175,7 @@ optionSetUseSyslog :: Bool -> ALPM ()
 optionSetUseSyslog = setBool {# call option_set_usesyslog #}
 
 optionGetNoUpgrades :: ALPM [String]
-optionGetNoUpgrades = getList {# call option_get_noupgrades #}
+optionGetNoUpgrades = valueToList {# call option_get_noupgrades #}
 
 optionAddNoUpgrade :: String -> ALPM ()
 optionAddNoUpgrade = setString_ {# call option_add_noupgrade #}
@@ -187,7 +187,7 @@ optionRemoveNoUpgrade :: String -> ALPM ()
 optionRemoveNoUpgrade = setString {# call option_remove_noupgrade #}
 
 optionGetNoExtracts :: ALPM [String]
-optionGetNoExtracts = getList {# call option_get_noextracts #}
+optionGetNoExtracts = valueToList {# call option_get_noextracts #}
 
 optionAddNoExtract :: String -> ALPM ()
 optionAddNoExtract = setString_ {# call option_add_noextract #}
@@ -199,7 +199,7 @@ optionRemoveNoExtract :: String -> ALPM ()
 optionRemoveNoExtract = setString {# call option_remove_noextract #}
 
 optionGetIgnorePkgs :: ALPM [String]
-optionGetIgnorePkgs = getList {# call option_get_ignorepkgs #}
+optionGetIgnorePkgs = valueToList {# call option_get_ignorepkgs #}
 
 optionAddIgnorePkg :: String -> ALPM ()
 optionAddIgnorePkg = setString_ {# call option_add_ignorepkg #}
@@ -211,7 +211,7 @@ optionRemoveIgnorePkg :: String -> ALPM ()
 optionRemoveIgnorePkg = setString {# call option_remove_ignorepkg #}
 
 optionGetIgnoreGrps :: ALPM [String]
-optionGetIgnoreGrps = getList {# call option_get_ignoregrps #}
+optionGetIgnoreGrps = valueToList {# call option_get_ignoregrps #}
 
 optionAddIgnoreGrp :: String -> ALPM ()
 optionAddIgnoreGrp = setString_ {# call option_add_ignoregrp #}
@@ -282,7 +282,8 @@ databaseReadGroup db = stringToMaybeValue $ {# call db_readgrp #} db
 databaseGetGroupCache :: Database -> ALPM [Group]
 databaseGetGroupCache = valueToList . {# call db_get_grpcache #}
 
--- alpm_list_t *alpm_db_search(pmdb_t *db, const alpm_list_t* needles);
+databaseSearch :: Database -> [String] -> ALPM [Package]
+databaseSearch db = valueToListALPM . setList ({# call db_search #} db)
 
 -- int alpm_db_set_pkgreason(pmdb_t *db, const char *name, pmpkgreason_t reason);
 
