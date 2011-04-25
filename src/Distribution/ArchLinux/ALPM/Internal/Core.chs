@@ -61,6 +61,15 @@ setEnum setter enum =
 valueToEnum :: Enum e => IO CInt -> ALPM e
 valueToEnum converter = liftIO $ return . toEnum . fromIntegral =<< converter
 
+stringToMaybeValue
+    :: ALPMType v
+    => (CString -> IO v)
+    -> String
+    -> ALPM (Maybe v)
+stringToMaybeValue action str = liftIO $ do
+    value <- withCString str action 
+    checkForNull unpack value
+
 withErrorHandling :: IO CInt -> ALPM ()
 withErrorHandling action =
     liftIO action >>= handleError
@@ -241,9 +250,7 @@ optionGetLocalDatabase = liftIO {# call option_get_localdb #}
 -- Database ------------------------------------------------------------------
 
 databaseRegisterSync :: String -> ALPM (Maybe Database)
-databaseRegisterSync treeName = liftIO $ do
-    db <- withCString treeName $ {# call db_register_sync #}
-    checkForNull unpack db 
+databaseRegisterSync = stringToMaybeValue {# call db_register_sync #}
 
 databaseUnregister :: Database -> ALPM ()
 databaseUnregister db = withErrorHandling $ {# call db_unregister #} db
@@ -263,14 +270,18 @@ databaseSetServer db = setString $ {# call db_setserver #} db
 databaseUpdate :: Database -> LogLevel -> ALPM ()
 databaseUpdate db = setEnum (flip {# call db_update #} db)
 
--- pmpkg_t *alpm_db_get_pkg(pmdb_t *db, const char *name);
--- alpm_list_t *alpm_db_get_pkgcache(pmdb_t *db);
+databaseGetPackage :: Database -> String -> ALPM (Maybe Package)
+databaseGetPackage db = stringToMaybeValue $ {# call db_get_pkg #} db
 
 databaseGetPackageCache :: Database -> ALPM [Package]
 databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 
--- pmgrp_t *alpm_db_readgrp(pmdb_t *db, const char *name);
--- alpm_list_t *alpm_db_get_grpcache(pmdb_t *db);
+databaseReadGroup :: Database -> String -> ALPM (Maybe Group)
+databaseReadGroup db = stringToMaybeValue $ {# call db_readgrp #} db
+
+databaseGetGroupCache :: Database -> ALPM [Package]
+databaseGetGroupCache = valueToList . {# call db_get_grpcache #}
+
 -- alpm_list_t *alpm_db_search(pmdb_t *db, const alpm_list_t* needles);
 
 -- int alpm_db_set_pkgreason(pmdb_t *db, const char *name, pmpkgreason_t reason);
