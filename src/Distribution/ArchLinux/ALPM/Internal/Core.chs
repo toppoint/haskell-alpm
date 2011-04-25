@@ -279,7 +279,7 @@ databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 databaseReadGroup :: Database -> String -> ALPM (Maybe Group)
 databaseReadGroup db = stringToMaybeValue $ {# call db_readgrp #} db
 
-databaseGetGroupCache :: Database -> ALPM [Package]
+databaseGetGroupCache :: Database -> ALPM [Group]
 databaseGetGroupCache = valueToList . {# call db_get_grpcache #}
 
 -- alpm_list_t *alpm_db_search(pmdb_t *db, const alpm_list_t* needles);
