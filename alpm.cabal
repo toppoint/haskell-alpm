@@ -41,7 +41,7 @@ Test-Suite Tests
         base >= 4 && < 5,
         mtl  == 2.0.*,
         HUnit == 1.2.*,
-        HTF == 0.7.*
+        HTF == 0.8.*
 
     Ghc-Options:
         -Wall
