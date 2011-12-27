@@ -11,8 +11,8 @@ Author:        Andreas Baldeau,
                Daniel Ehlers
 Maintainer:    Andreas Baldeau <andreas@baldeau.net>,
                Daniel Ehlers <danielehlers@mindeye.net>
-Homepage:      http://github.com/baldo/haskell-alpm
-Bug-Reports:   http://github.com/baldo/haskell-alpm/issues
+Homepage:      http://github.com/toppoint/haskell-alpm
+Bug-Reports:   http://github.com/toppoint/haskell-alpm/issues
 Category:      Distribution
 Tested-With:   GHC == 7.0.2
 
@@ -21,7 +21,7 @@ Extra-Source-Files:
 
 Source-Repository head
     Type:     git
-    Location: git://github.com/baldo/haskell-alpm
+    Location: git://github.com/toppoint/haskell-alpm
 
 Test-Suite Tests
     Type:
