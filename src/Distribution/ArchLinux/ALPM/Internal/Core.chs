@@ -138,32 +138,44 @@ getVersion = liftIO $
 -- alpm_cb_totaldl alpm_option_get_totaldlcb(void);
 -- void alpm_option_set_totaldlcb(alpm_cb_totaldl cb);
 
-optionGetRoot :: Handle -> ALPM (Maybe FilePath)
-optionGetRoot = getString . {# call option_get_root #} 
+optionGetRoot :: ALPM (Maybe FilePath)
+optionGetRoot = getString . {# call option_get_root #} =<< getHandle
 
-optionGetDatabasePath :: Handle -> ALPM (Maybe FilePath)
-optionGetDatabasePath = getString . {# call option_get_dbpath #} 
+optionGetDatabasePath :: ALPM (Maybe FilePath)
+optionGetDatabasePath = getString . {# call option_get_dbpath #} =<< getHandle
 
-optionGetCacheDirs :: Handle -> ALPM (List a)
-optionGetCacheDirs = liftIO . liftM (List . castPtr) .  {# call option_get_cachedirs #} 
+optionGetCacheDirs :: Handle -> ALPM (List String)
+optionGetCacheDirs = valueToList . {# call option_get_cachedirs #} 
 
-optionAddCacheDir :: Handle -> FilePath -> ALPM ()
-optionAddCacheDir = setString . {# call option_add_cachedir #} 
+optionAddCacheDir :: FilePath -> ALPM ()
+optionAddCacheDir fp = do 
+  hdl <- getHandle 
+  setString ({# call option_add_cachedir #} hdl) fp
 
-optionSetCacheDirs :: Handle -> [FilePath] -> ALPM ()
-optionSetCacheDirs hdl =  setList $ liftM fromIntegral . {# call option_set_cachedirs #} hdl
+optionSetCacheDirs :: [FilePath] -> ALPM ()
+optionSetCacheDirs fpl =  do
+  hdl <- getHandle 
+  setList ({# call option_set_cachedirs #} hdl) fpl
 
-optionRemoveCacheDir :: Handle -> FilePath -> ALPM ()
-optionRemoveCacheDir = setString . {# call option_remove_cachedir #}
+optionRemoveCacheDir ::FilePath -> ALPM ()
+optionRemoveCacheDir fp = do 
+  hdl <- getHandle
+  setString ({# call option_remove_cachedir #} hdl) fp
 
-optionGetLogFile :: Handle -> ALPM (Maybe FilePath)
-optionGetLogFile = getString . {# call option_get_logfile #}
+optionGetLogFile :: ALPM (Maybe FilePath)
+optionGetLogFile = do
+  hdl <- getHandle
+  getString ({# call option_get_logfile #} hdl)
 
-optionSetLogFile :: Handle -> FilePath -> ALPM ()
-optionSetLogFile = setString . {# call option_set_logfile #}
+optionSetLogFile :: FilePath -> ALPM ()
+optionSetLogFile fp = do
+  hdl <- getHandle
+  setString ({# call option_set_logfile #} hdl) fp
 
-optionGetLockFile :: Handle ->  ALPM (Maybe FilePath)
-optionGetLockFile = getString . {# call option_get_lockfile #}
+optionGetLockFile :: ALPM (Maybe FilePath)
+optionGetLockFile = do 
+  hdl <- getHandle
+  getString ({# call option_get_lockfile #} hdl)
 
 -- /* no set_lockfile, path is determined from dbpath */
 

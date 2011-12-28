@@ -21,7 +21,7 @@ main = do
 
 alpmTest :: ALPM Bool -> Assertion
 alpmTest test = do
-    r <- alpm test
+    r <- runDefaultALPM test
     case r of
         Left e ->
             assertFailure $ show e
@@ -81,15 +81,8 @@ test_getVersion = getStringNotNullTest getVersion
 test_optionRootNothing :: Assertion
 test_optionRootNothing = stringIsNothingTest optionGetRoot
 
-test_optionRoot :: Assertion
-test_optionRoot = getAndSetFilePathTest optionSetRoot optionGetRoot
-
 test_optionDatabasePathNothing :: Assertion
 test_optionDatabasePathNothing = stringIsNothingTest optionGetDatabasePath
-
-test_optionDatabasePath :: Assertion
-test_optionDatabasePath =
-    getAndSetFilePathTest optionSetDatabasePath optionGetDatabasePath
 
 {-
 optionGetCacheDirs :: IO (ALPMList a)

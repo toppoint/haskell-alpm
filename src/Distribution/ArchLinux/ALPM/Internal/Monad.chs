@@ -13,8 +13,10 @@ module Distribution.ArchLinux.ALPM.Internal.Monad
     , Exception (..)
 
       -- * Functions
-    , alpm
+    , runALPM
+    , runDefaultALPM
     , handleError
+    , getHandle
 
     , throw
     , catch
@@ -26,7 +28,8 @@ where
 import Prelude hiding (catch)
 
 import qualified Control.Monad.Error as E
-import Control.Monad.Trans
+import qualified Control.Monad.Reader as R
+
 import Foreign.C
 import Foreign.Ptr
 import Foreign.Storable
@@ -37,8 +40,8 @@ import Foreign.Marshal.Alloc
 
 -- Types ---------------------------------------------------------------------
 
-newtype ALPM a = ALPM (E.ErrorT Exception IO a)
-  deriving (Monad, MonadIO, E.MonadError Exception)
+newtype ALPM a = ALPM (E.ErrorT Exception (R.ReaderT Handle IO) a)
+  deriving (Monad, R.MonadIO, E.MonadError Exception, R.MonadReader Handle)
 
 data Exception = UnknownError Int
                | Error Error
@@ -48,56 +51,45 @@ instance E.Error Exception where
     noMsg = UnknownError 0
     strMsg _ = UnknownError 0
 
-
 -- Functions -----------------------------------------------------------------
 
-run  :: ALPM a -> IO (Either Exception a)
-run (ALPM action) = E.runErrorT action
+-- | Run an alpm function with given root and database location. 
+runALPM  :: String -> String -> ALPM a -> IO (Either Exception a)
+runALPM root dbdir (ALPM action) = 
+  withCString dbdir $ \ dbdir' -> 
+   withCString root  $ \ root' -> do
+    perr <-  malloc :: IO (Ptr CInt)
+    hdl <- {# call initialize #} root' dbdir' perr
+    err <- peek perr
+    free perr
+    if err /= 0 
+      then if err > 0 
+       then return . Left . Error . toEnum . fromIntegral $ err
+       else return . Left . UnknownError . fromIntegral $ err
+      else do
+        result <- R.runReaderT (E.runErrorT action) hdl
+        _ <- {# call release #} hdl
+        return result 
 
-alpm :: ALPM a -> IO (Either Exception a)
-alpm a = run $ do
-    handle <- initialize "/" "/var/lib/pacman"
-    r <- catch a
-    _ <- catch (release handle)
+-- | Run an alpm function with default enviroment settings.
+runDefaultALPM :: ALPM a -> IO (Either Exception a)
+runDefaultALPM = runALPM "/" "/var/lib/pacman"
 
-    case r of
-        Left e ->
-            throw e
-
-        Right r' ->
-            return r'
-
+-- | Handle Errorcode
 handleError :: CInt -> ALPM ()
 handleError 0 = return ()
 handleError e
   | e < 0     = throw $ UnknownError $ fromIntegral e
   | otherwise = throw $ Error $ toEnum $ fromIntegral e
 
+-- | Return the enviroment handle
+getHandle :: ALPM Handle
+getHandle = R.ask
+
+-- | Throw an exception
 throw :: Exception -> ALPM a
 throw = E.throwError
 
+-- | Catch an exception
 catch :: ALPM a -> ALPM (Either Exception a)
 catch action = E.catchError (action >>= return . Right) (return . Left)
-
--- | This function needs to be called first or nothing else will work.
-initialize :: String -> String -> ALPM Handle
-initialize root dbdir = do
-  (err,hdl) <- liftIO init' 
-  handleError err
-  return hdl
- where init' :: IO (CInt,Handle)
-       init' = withCString dbdir $ \ dbdir' ->
-        withCString root $
-          \root' -> do 
-             perr <-  malloc :: IO (Ptr CInt)
-             hdl <- {# call initialize #} root' dbdir' perr
-             err <- peek perr
-             return (err,hdl)
-
--- | Call this function to clean up. After this the library is no longer
--- available
-release :: Handle -> ALPM ()
-release handle = do
-    e <- liftIO $ {# call release #} handle
-    handleError e
-
