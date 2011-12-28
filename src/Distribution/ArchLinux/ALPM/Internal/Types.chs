@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, TypeSynonymInstances #-}
+{-# LANGUAGE ForeignFunctionInterface, TypeSynonymInstances, FlexibleInstances #-}
 
 {# context lib="alpm" prefix="alpm" #}
 
@@ -8,26 +8,27 @@ module Distribution.ArchLinux.ALPM.Internal.Types
       ALPMType (..)
 
       -- * Types
+    , Conflict
     , Database
-    , Package
     , Delta
-    , Group
-    , Transaction
     , Dependency
     , DependencyMissing
-    , Conflict
     , FileConflict
+    , Group
+    , Handle 
+    , Package
+    , Transaction
 
       -- * Enums
+    , DependencyModule (..)
+    , Error (..)
+    , Event (..)
+    , FileConflictType (..)
     , LogLevel (..)
     , PkgReason (..)
+    , Progress (..)
+    , Question (..)
     , TransactionFlag (..)
-    , TransactionEvent (..)
-    , TransactionConversation (..)
-    , TransactionProgress (..)
-    , DependencyModule (..)
-    , FileConflictType (..)
-    , Error (..)
     )
 where
 
@@ -49,95 +50,101 @@ instance ALPMType String where
     unpack = liftM castPtr .  newCString 
     pack   = peekCString . castPtr 
 
-{# pointer *pmdb_t as Database newtype #}
+{# pointer *alpm_db_t as Database newtype #}
 
 instance ALPMType Database where
     unpack (Database ptr) = return ptr
     pack = return . Database
 
-{# pointer *pmpkg_t as Package newtype #}
+{# pointer *alpm_pkg_t as Package newtype #}
 
 instance ALPMType Package where
     unpack (Package ptr) = return ptr
     pack = return . Package
 
-{# pointer *pmdelta_t as Delta newtype #}
+{# pointer *alpm_delta_t as Delta newtype #}
 
 instance ALPMType Delta where
     unpack (Delta ptr) = return ptr
     pack = return . Delta
 
-{# pointer *pmgrp_t as Group newtype #}
+{# pointer *alpm_group_t as Group newtype #}
 
 instance ALPMType Group where
     unpack (Group ptr) = return ptr
     pack = return . Group
 
-{# pointer *pmtrans_t as Transaction newtype #}
+{# pointer *alpm_trans_t as Transaction newtype #}
 
 instance ALPMType Transaction where
     unpack (Transaction ptr) = return ptr
     pack = return . Transaction
 
-{# pointer *pmdepend_t as Dependency newtype #}
+{# pointer *alpm_depend_t as Dependency newtype #}
 
 instance ALPMType Dependency where
     unpack (Dependency ptr) = return ptr
     pack = return . Dependency
 
-{# pointer *pmdepmissing_t as DependencyMissing newtype #}
+{# pointer *alpm_depmissing_t as DependencyMissing newtype #}
 
 instance ALPMType DependencyMissing where
     unpack (DependencyMissing ptr) = return ptr
     pack = return . DependencyMissing
 
-{# pointer *pmconflict_t as Conflict newtype #}
+{# pointer *alpm_conflict_t as Conflict newtype #}
 
 instance ALPMType Conflict where
     unpack (Conflict ptr) = return ptr
     pack = return . Conflict
 
-{# pointer *pmfileconflict_t as FileConflict newtype #}
+{# pointer *alpm_fileconflict_t as FileConflict newtype #}
 
 instance ALPMType FileConflict where
     unpack (FileConflict ptr) = return ptr
     pack = return . FileConflict
 
+{# pointer *alpm_handle_t as Handle newtype #}
+
+instance ALPMType Handle where
+    unpack (Handle ptr) = return ptr
+    pack = return .Handle  
+
 -- Enums ---------------------------------------------------------------------
 
 -- | The log levels.
-{# enum pmloglevel_t as LogLevel {underscoreToCase}
+{# enum alpm_loglevel_t as LogLevel {underscoreToCase}
     with prefix = "PM_" deriving (Eq, Read, Show) #}
 
 -- | Reason why the package was installed.
-{# enum pmpkgreason_t as PkgReason {underscoreToCase}
+{# enum alpm_pkgreason_t as PkgReason {underscoreToCase}
      with prefix = "PM_" deriving (Eq, Read, Show) #}
 
 -- | Flags.
-{# enum pmtransflag_t as TransactionFlag {underscoreToCase}
+{# enum alpm_transflag_t as TransactionFlag {underscoreToCase}
      with prefix = "PM_" deriving (Eq, Read, Show) #}
 
--- | Transaction events.
-{# enum pmtransevt_t as TransactionEvent {underscoreToCase}
-     with prefix = "PM_" deriving (Eq, Read, Show) #}
+-- | Events
+{#enum alpm_event_t as Event {underscoreToCase}
+    with prefix = "ALPM_" deriving (Eq,Read,Show) #}
 
--- | Transaction conversations.
-{# enum pmtransconv_t as TransactionConversation {underscoreToCase}
-     with prefix = "PM_" deriving (Eq, Read, Show) #}
+-- | Question
+{#enum alpm_question_t as Question {underscoreToCase}
+    with prefix = "ALPM_" deriving (Eq,Read,Show) #}
 
--- | Transaction progress.
-{# enum pmtransprog_t as TransactionProgress {underscoreToCase}
-     with prefix = "PM_" deriving (Eq, Read, Show) #}
+-- | Progress
+{#enum alpm_progress_t as Progress {underscoreToCase}
+    with prefix = "ALPM_" deriving (Eq,Read,Show) #}
 
 -- | Dependencies and conflicts.
-{# enum pmdepmod_t as DependencyModule {underscoreToCase}
+{# enum alpm_depmod_t as DependencyModule {underscoreToCase}
     with prefix = "PM_" deriving (Eq, Read, Show) #}
 
 -- | File conflicts.
-{# enum pmfileconflicttype_t as FileConflictType {underscoreToCase}
+{# enum alpm_fileconflicttype_t as FileConflictType {underscoreToCase}
     with prefix = "PM_" deriving (Eq, Read, Show) #}
 
 -- | Errors.
-{# enum _pmerrno_t as Error {underscoreToCase}
+{# enum _alpm_errno_t as Error {underscoreToCase}
     with prefix = "PM_" deriving (Eq, Read, Show) #}
 

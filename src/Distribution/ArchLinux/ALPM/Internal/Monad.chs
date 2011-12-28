@@ -28,6 +28,9 @@ import Prelude hiding (catch)
 import qualified Control.Monad.Error as E
 import Control.Monad.Trans
 import Foreign.C
+import Foreign.Ptr
+import Foreign.Storable
+import Foreign.Marshal.Alloc
 
 {# import Distribution.ArchLinux.ALPM.Internal.Types #}
 
@@ -53,9 +56,9 @@ run (ALPM action) = E.runErrorT action
 
 alpm :: ALPM a -> IO (Either Exception a)
 alpm a = run $ do
-    initialize
+    handle <- initialize "/" "/var/lib/pacman"
     r <- catch a
-    _ <- catch release
+    _ <- catch (release handle)
 
     case r of
         Left e ->
@@ -77,15 +80,24 @@ catch :: ALPM a -> ALPM (Either Exception a)
 catch action = E.catchError (action >>= return . Right) (return . Left)
 
 -- | This function needs to be called first or nothing else will work.
-initialize :: ALPM ()
-initialize = do
-    e <- liftIO {# call initialize #}
-    handleError e
+initialize :: String -> String -> ALPM Handle
+initialize root dbdir = do
+  (err,hdl) <- liftIO init' 
+  handleError err
+  return hdl
+ where init' :: IO (CInt,Handle)
+       init' = withCString dbdir $ \ dbdir' ->
+        withCString root $
+          \root' -> do 
+             perr <-  malloc :: IO (Ptr CInt)
+             hdl <- {# call initialize #} root' dbdir' perr
+             err <- peek perr
+             return (err,hdl)
 
 -- | Call this function to clean up. After this the library is no longer
 -- available
-release :: ALPM ()
-release = do
-    e <- liftIO {# call release #}
+release :: Handle -> ALPM ()
+release handle = do
+    e <- liftIO $ {# call release #} handle
     handleError e
 
