@@ -20,6 +20,7 @@ import Control.Monad.Trans
 -- Exportable Types ---------------------------------------------------------
 
 type CallbackDownload = String -> Int -> Int -> IO ()
+type CallbackTotalDownload = Int -> IO ()
 
 -- Helpers ------------------------------------------------------------------
 
@@ -109,6 +110,16 @@ wrap_cb_download f = _wrap_cb_download $ \ cstr cl1 cl2 -> do
       l2 = fromIntegral cl2
   f str l1 l2
 
+foreign import ccall "wrapper" 
+  _wrap_cb_total_download :: (CLong -> IO ())
+                          -> IO (FunPtr (CLong -> IO ()))
+
+wrap_cb_total_download :: CallbackTotalDownload 
+                       -> IO (FunPtr (CLong -> IO ()))
+wrap_cb_total_download f = _wrap_cb_total_download $ \ ctd -> do
+  let td = fromIntegral ctd
+  f td
+
 -- General ------------------------------------------------------------------
 
 -- | Get ALPM's version.
@@ -125,7 +136,6 @@ getVersion = liftIO $
 
 -- Downloading ---------------------------------------------------------------
 
--- typedef void (*alpm_cb_totaldl)(off_t total);
 
 -- | Returns the callback used to report download progress.
 -- alpm_cb_download alpm_option_get_dlcb(alpm_handle_t *handle);                   
@@ -139,6 +149,18 @@ optionSetDownloadCallback dlcb = do
     clbk <- wrap_cb_download dlcb
     {# call alpm_option_set_dlcb #} hdl clbk 
 
+{- -- Returns the callback used to report total download size. 
+  alpm_cb_totaldl alpm_option_get_totaldlcb(alpm_handle_t *handle);
+-}
+-- optionGetTotalDownloadCallback :: 
+
+-- | Sets the callback used to report total download size. 
+optionSetTotalDownloadCallback :: CallbackTotalDownload -> ALPM ()
+optionSetTotalDownloadCallback tdcb = do
+  hdl <- getHandle
+  withErrorHandling $ do
+    clbk <- wrap_cb_total_download tdcb
+    {# call option_set_totaldlcb #} hdl clbk
 
 -- Options -------------------------------------------------------------------
 
