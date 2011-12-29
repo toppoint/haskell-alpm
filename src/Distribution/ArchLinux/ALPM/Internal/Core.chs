@@ -120,8 +120,6 @@ wrap_cb_total_download :: CallbackTotalDownload
 wrap_cb_total_download f = _wrap_cb_total_download $ \ ctd -> do
   let td = fromIntegral ctd
   f td
-
---typedef int (*alpm_cb_fetch)(const char *url, const char *localpath, int force);
 foreign import ccall "wrapper"
   _wrap_cb_fetch :: (CString -> CString -> CInt -> IO CInt)
                  -> IO (FunPtr ((CString -> CString -> CInt -> IO CInt)))
@@ -149,6 +147,21 @@ getVersion = liftIO $
 
 -- Downloading ---------------------------------------------------------------
 
+-- char *alpm_fetch_pkgurl(alpm_handle_t *handle, const char *url);
+
+-- | Fetch a remote pkg.
+--   throws an exception on error.
+fetchPackageURL :: String        -- ^ URL of the package to download
+                -> ALPM FilePath -- ^ the downloaded filepath on success.
+fetchPackageURL url = do
+  hdl <- getHandle
+  maybeResult <- liftIO $ do
+    curl <- newCString url
+    result <- {# call fetch_pkgurl #} hdl curl
+    maybePeek peekCString result
+  case maybeResult of
+    Just filepath -> return filepath
+    Nothing       -> throw (UnknownError 0)
 
 -- Options -------------------------------------------------------------------
 
