@@ -17,6 +17,9 @@ import Foreign.Marshal.Utils (toBool, fromBool, maybePeek)
 import Control.Monad
 import Control.Monad.Trans
 
+-- Exportable Types ---------------------------------------------------------
+
+type CallbackDownload = String -> Int -> Int -> IO ()
 
 -- Helpers ------------------------------------------------------------------
 
@@ -92,6 +95,19 @@ maybeToEnum n
   | n == 0    = Nothing
   | otherwise = Just $ toEnum n
 
+-- Callback Handlers -------------------------------------------------------
+
+foreign import ccall "wrapper"
+  _wrap_cb_download :: (CString -> CLong -> CLong -> IO ()) 
+                   -> IO (FunPtr (CString -> CLong -> CLong -> IO ()))
+
+wrap_cb_download :: CallbackDownload 
+                 -> IO (FunPtr (CString -> CLong -> CLong -> IO ()))
+wrap_cb_download f = _wrap_cb_download $ \ cstr cl1 cl2 -> do
+  str <- peekCString cstr
+  let l1 = fromIntegral cl1
+      l2 = fromIntegral cl2
+  f str l1 l2
 
 -- General ------------------------------------------------------------------
 
@@ -109,19 +125,19 @@ getVersion = liftIO $
 
 -- Downloading ---------------------------------------------------------------
 
--- typedef void (*alpm_cb_download)(const char *filename, off_t xfered, off_t total);
 -- typedef void (*alpm_cb_totaldl)(off_t total);
 
-{-
-/** A callback for downloading files
- * @param url the URL of the file to be downloaded
- * @param localpath the directory to which the file should be downloaded
- * @param force whether to force an update, even if the file is the same
- * @return 0 on success, 1 if the file exists and is identical, -1 on
- * error.
- */
--}
--- typedef int (*alpm_cb_fetch)(const char *url, const char *localpath, int force);
+-- | Returns the callback used to report download progress.
+-- alpm_cb_download alpm_option_get_dlcb(alpm_handle_t *handle);                   
+-- optionGetDownloadCallback :: Handle -> ALPM CallbackDownload
+
+-- | Sets the callback used to report download progress.
+optionSetDownloadCallback :: CallbackDownload -> ALPM ()
+optionSetDownloadCallback dlcb = do
+  hdl <- getHandle 
+  withErrorHandling $ do
+    clbk <- wrap_cb_download dlcb
+    {# call alpm_option_set_dlcb #} hdl clbk 
 
 
 -- Options -------------------------------------------------------------------
