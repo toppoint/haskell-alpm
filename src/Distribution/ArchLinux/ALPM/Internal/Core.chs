@@ -21,6 +21,7 @@ import Control.Monad.Trans
 
 type CallbackDownload = String -> Int -> Int -> IO ()
 type CallbackTotalDownload = Int -> IO ()
+type CallbackFetch = String -> String -> Bool -> IO Int
 
 -- Helpers ------------------------------------------------------------------
 
@@ -120,6 +121,18 @@ wrap_cb_total_download f = _wrap_cb_total_download $ \ ctd -> do
   let td = fromIntegral ctd
   f td
 
+--typedef int (*alpm_cb_fetch)(const char *url, const char *localpath, int force);
+foreign import ccall "wrapper"
+  _wrap_cb_fetch :: (CString -> CString -> CInt -> IO CInt)
+                 -> IO (FunPtr ((CString -> CString -> CInt -> IO CInt)))
+
+wrap_cb_fetch :: CallbackFetch -> IO (FunPtr ((CString -> CString -> CInt -> IO CInt)))
+wrap_cb_fetch f = _wrap_cb_fetch $ \ cs1 cs2 ci -> do
+  s1 <- peekCString cs1
+  s2 <- peekCString cs2
+  let i = toBool ci
+  return . fromIntegral =<<  f s1 s2 i
+
 -- General ------------------------------------------------------------------
 
 -- | Get ALPM's version.
@@ -136,31 +149,6 @@ getVersion = liftIO $
 
 -- Downloading ---------------------------------------------------------------
 
-
--- | Returns the callback used to report download progress.
--- alpm_cb_download alpm_option_get_dlcb(alpm_handle_t *handle);                   
--- optionGetDownloadCallback :: Handle -> ALPM CallbackDownload
-
--- | Sets the callback used to report download progress.
-optionSetDownloadCallback :: CallbackDownload -> ALPM ()
-optionSetDownloadCallback dlcb = do
-  hdl <- getHandle 
-  withErrorHandling $ do
-    clbk <- wrap_cb_download dlcb
-    {# call alpm_option_set_dlcb #} hdl clbk 
-
-{- -- Returns the callback used to report total download size. 
-  alpm_cb_totaldl alpm_option_get_totaldlcb(alpm_handle_t *handle);
--}
--- optionGetTotalDownloadCallback :: 
-
--- | Sets the callback used to report total download size. 
-optionSetTotalDownloadCallback :: CallbackTotalDownload -> ALPM ()
-optionSetTotalDownloadCallback tdcb = do
-  hdl <- getHandle
-  withErrorHandling $ do
-    clbk <- wrap_cb_total_download tdcb
-    {# call option_set_totaldlcb #} hdl clbk
 
 -- Options -------------------------------------------------------------------
 
@@ -292,9 +280,41 @@ optionSetCheckSpace = setBool .  {# call option_set_checkspace #}
 optionGetLocalDatabase :: Handle -> ALPM Database
 optionGetLocalDatabase = liftIO .  {# call option_get_localdb #}
 
--- db.h
--- alpm_list_t *alpm_option_get_syncdbs(void);
+-- | Returns the callback used to report download progress.
+-- alpm_cb_download alpm_option_get_dlcb(alpm_handle_t *handle);                   
+-- optionGetDownloadCallback :: ALPM CallbackDownload
 
+-- | Sets the callback used to report download progress.
+optionSetDownloadCallback :: CallbackDownload -> ALPM ()
+optionSetDownloadCallback dlcb = do
+  hdl <- getHandle 
+  withErrorHandling $ do
+    clbk <- wrap_cb_download dlcb
+    {# call alpm_option_set_dlcb #} hdl clbk 
+
+-- |Returns the callback used to report total download size. 
+--  alpm_cb_totaldl alpm_option_get_totaldlcb(alpm_handle_t *handle);
+-- optionGetTotalDownloadCallback :: 
+
+-- | Sets the callback used to report total download size. 
+optionSetTotalDownloadCallback :: CallbackTotalDownload -> ALPM ()
+optionSetTotalDownloadCallback tdcb = do
+  hdl <- getHandle
+  withErrorHandling $ do
+    clbk <- wrap_cb_total_download tdcb
+    {# call option_set_totaldlcb #} hdl clbk
+
+-- | Returns the downloading callback. 
+-- alpm_cb_fetch alpm_option_get_fetchcb(alpm_handle_t *handle);
+-- optionGetFetchCallback :: 
+
+-- | Sets the downloading callback.
+optionSetFetchCallback :: CallbackFetch -> ALPM ()
+optionSetFetchCallback fcb = do
+  hdl <- getHandle 
+  withErrorHandling $ do 
+    clbk <- wrap_cb_fetch fcb
+    {# call option_set_fetchcb #} hdl clbk
 
 -- Database ------------------------------------------------------------------
 
