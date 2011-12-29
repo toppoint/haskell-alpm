@@ -28,6 +28,7 @@ module Distribution.ArchLinux.ALPM.Internal.Types
     , PkgReason (..)
     , Progress (..)
     , Question (..)
+    , SigLevel (..)
     , TransactionFlag (..)
     )
 where
@@ -148,3 +149,6 @@ instance ALPMType Handle where
 {# enum _alpm_errno_t as Error {underscoreToCase}
     with prefix = "PM_" deriving (Eq, Read, Show) #}
 
+-- | Signatur Level
+{# enum _alpm_siglevel_t as SigLevel {underscoreToCase}
+    with prefix = "ALPM_" deriving (Eq, Read, Show) #}

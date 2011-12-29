@@ -60,6 +60,9 @@ setList setter lst = withErrorHandling $ (setter . castPtr . unList) =<< toList 
 setList_ :: ALPMType b => (Ptr a -> IO c) -> [b] -> ALPM c
 setList_ setter lst = liftIO $ (setter . castPtr . unList) =<< toList lst 
 
+withList :: (Ptr a -> IO CInt) -> List b -> ALPM ()
+withList setter lst = withErrorHandling $ (setter . castPtr . unList) lst
+
 valueToString :: IO CString -> ALPM String
 valueToString = liftIO . (=<<) peekCString
 
@@ -375,23 +378,43 @@ databaseUnregisterAll = withErrorHandling . {# call db_unregister_all #}
 databaseGetName :: Database -> ALPM String
 databaseGetName = valueToString . {# call alpm_db_get_name #}
 
+-- | Get the signature verification level for a database.
+--  Will return the default verification level if this database is set up
+-- with ALPM_SIG_USE_DEFAULT.
+databaseGetSignaturVerificationLevel :: Database -> ALPM SigLevel
+databaseGetSignaturVerificationLevel = 
+  valueToEnum . {# call db_get_siglevel #}
+
+-- | Check the validity of a database.
+--   This is most useful for sync databases and verifying signature status.
+--  If invalid, the handle error code will be thrown.
+databaseGetValid :: Database -> ALPM ()
+databaseGetValid = 
+  withErrorHandling . {# call db_get_valid #}
+
 databaseGetServers :: Database -> ALPM (List String)
 databaseGetServers = valueToList . {# call alpm_db_get_servers #}
 
+databaseSetServers :: Database -> List String -> ALPM ()
+databaseSetServers = withList . {# call db_set_servers #} 
+
 databaseAddServer :: Database -> String -> ALPM ()
-databaseAddServer db = setString $ {# call db_add_server #} db
+databaseAddServer = setString . {# call db_add_server #} 
+
+databaseRemoveServer  :: Database -> String -> ALPM ()
+databaseRemoveServer =  setString . {# call db_remove_server #}
 
 databaseUpdate :: Database -> LogLevel -> ALPM ()
-databaseUpdate db = setEnum (flip {# call db_update #} db)
+databaseUpdate = setEnum . (flip {# call db_update #})
 
 databaseGetPackage :: Database -> String -> ALPM (Maybe Package)
-databaseGetPackage db = stringToMaybeValue $ {# call db_get_pkg #} db
+databaseGetPackage = stringToMaybeValue . {# call db_get_pkg #}
 
 databaseGetPackageCache :: Database -> ALPM (List Package)
 databaseGetPackageCache = valueToList . {# call db_get_pkgcache #}
 
 databaseReadGroup :: Database -> String -> ALPM (Maybe Group)
-databaseReadGroup db = stringToMaybeValue $ {# call db_readgroup #} db
+databaseReadGroup = stringToMaybeValue . {# call db_readgroup #} 
 
 databaseGetGroupCache :: Database -> ALPM (List Group)
 databaseGetGroupCache = valueToList . {# call db_get_groupcache #}
@@ -400,6 +423,10 @@ databaseSearch :: Database -> [String] -> ALPM (List Package)
 databaseSearch db = valueToListALPM . setList_ ({# call db_search #} db)
 
 -- int alpm_db_set_pkgreason(pmdb_t *db, const char *name, pmpkgreason_t reason);
+databaseSetPackageReason :: Package -> PkgReason -> ALPM ()
+databaseSetPackageReason pkg reason = do
+  hdl <- getHandle
+  setEnum ({# call db_set_pkgreason #} hdl pkg) reason
 
 
 -- Package -------------------------------------------------------------------
