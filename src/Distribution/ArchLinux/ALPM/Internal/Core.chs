@@ -474,14 +474,16 @@ databaseSetPackageReason pkg reason = do
 
 -- Package -------------------------------------------------------------------
 
--- /* Info parameters */
 
--- int alpm_pkg_load(const char *filename, int full, pmpkg_t **pkg);
+-- int alpm_pkg_load(alpm_handle_t *handle, const char *filename, int full,	alpm_siglevel_t level, alpm_pkg_t **pkg);
 -- int alpm_pkg_free(pmpkg_t *pkg);
--- int alpm_pkg_checkmd5sum(pmpkg_t *pkg);
--- char *alpm_fetch_pkgurl(const char *url);
+
+-- | Check the integrity (with md5) of a package from the sync cache.
+packageCheckMD5Sum :: Package -> ALPM Bool
+packageCheckMD5Sum = liftM toBool . liftIO . {# call pkg_checkmd5sum #} 
+
 -- int alpm_pkg_vercmp(const char *a, const char *b);
--- alpm_list_t *alpm_pkg_compute_requiredby(pmpkg_t *pkg);
+-- alpm_list_t *alpm_pkg_compute_requiredby(alpm_pkg_t *pkg);
 
 packageGetFilename :: Package -> ALPM FilePath
 packageGetFilename = valueToString . {# call pkg_get_filename #}
@@ -491,6 +493,8 @@ packageGetName = valueToString . {# call pkg_get_name #}
 
 packageGetVersion :: Package -> ALPM String
 packageGetVersion = valueToString . {# call pkg_get_version #}
+
+-- alpm_pkgfrom_t alpm_pkg_get_origin(alpm_pkg_t *pkg);
 
 packageGetDescription :: Package -> ALPM String
 packageGetDescription = valueToString . {# call pkg_get_desc #}
@@ -504,14 +508,25 @@ packageGetURL = valueToString . {# call pkg_get_url #}
 packageGetPackager :: Package -> ALPM String
 packageGetPackager = valueToString . {# call pkg_get_packager #}
 
-packageGetMd5Sum :: Package -> ALPM String
-packageGetMd5Sum = valueToString . {# call pkg_get_md5sum #}
+packageGetMD5Sum :: Package -> ALPM String
+packageGetMD5Sum = valueToString . {# call pkg_get_md5sum #}
+
+packageGetSHA256Sum :: Package -> ALPM String
+packageGetSHA256Sum = valueToString . {# call pkg_get_sha256sum #}
 
 packageGetArchitecture :: Package -> ALPM String
 packageGetArchitecture = valueToString . {# call pkg_get_arch #}
 
--- off_t alpm_pkg_get_size(pmpkg_t *pkg);
--- off_t alpm_pkg_get_isize(pmpkg_t *pkg);
+-- | Returns the size of the package. This is only available for sync database
+--  packages and package files, not those loaded from the local database.
+packageGetSize :: Package -> ALPM Int
+packageGetSize = liftM fromIntegral . liftIO . {# call pkg_get_size #}
+
+-- | Returns the installed size of the package.
+packageGetInstallSize :: Package -> ALPM Int
+packageGetInstallSize = liftM fromIntegral . liftIO . {# call pkg_get_isize #}
+
+-- alpm_pkgreason_t alpm_pkg_get_reason(alpm_pkg_t *pkg);
 
 packageGetLicenses :: Package -> ALPM (List String)
 packageGetLicenses = valueToList . {# call pkg_get_licenses #}
@@ -546,6 +561,8 @@ packageGetBackup = valueToList . {# call pkg_get_backup #}
 packageGetDatabase :: Package -> ALPM Database
 packageGetDatabase = liftIO . {# call pkg_get_db #}
 
+-- const char *alpm_pkg_get_base64_sig(alpm_pkg_t *pkg);
+
 -- void *alpm_pkg_changelog_open(pmpkg_t *pkg);
 -- size_t alpm_pkg_changelog_read(void *ptr, size_t size,
 -- 		const pmpkg_t *pkg, const void *fp);
@@ -558,7 +575,7 @@ packageGetDatabase = liftIO . {# call pkg_get_db #}
 packageUnusedDeltas :: Package -> ALPM (List Delta)
 packageUnusedDeltas = valueToList . {# call pkg_unused_deltas #}
 
--- Delta ---------------------------------------------------------------------
+-- Signatures ---------------------------------------------------------------
 
 -- Group ---------------------------------------------------------------------
 
