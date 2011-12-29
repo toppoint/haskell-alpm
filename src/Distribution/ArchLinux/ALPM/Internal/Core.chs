@@ -23,6 +23,16 @@ type CallbackDownload = String -> Int -> Int -> IO ()
 type CallbackTotalDownload = Int -> IO ()
 type CallbackFetch = String -> String -> Bool -> IO Int
 
+-- typedef void (*alpm_cb_progress)(alpm_progress_t, const char *, int, size_t, size_t);
+type CallbackProgress = Progress -> String -> Int -> Int -> Int -> IO ()
+
+-- typedef void (*alpm_cb_question)(alpm_question_t, void *, void *, void *, int *);
+-- type CallbackQuestion = Question -> ...... ?
+
+-- typedef void (*alpm_cb_event)(alpm_event_t, void *, void *);
+-- typedef void (*alpm_cb_log)(alpm_loglevel_t, const char *, va_list);
+
+
 -- Helpers ------------------------------------------------------------------
 
 getBool :: IO CInt -> ALPM Bool
@@ -131,6 +141,21 @@ wrap_cb_fetch f = _wrap_cb_fetch $ \ cs1 cs2 ci -> do
   let i = toBool ci
   return . fromIntegral =<<  f s1 s2 i
 
+-- type CallbackProgress = Progress -> String -> Int -> Int -> Int -> IO ()
+foreign import ccall "wrapper" 
+  _wrap_cb_progress :: (CInt -> CString -> CInt -> CUInt -> CUInt -> IO ())
+                    -> IO (FunPtr (CInt -> CString -> CInt -> CUInt -> CUInt -> IO ()))
+
+wrap_cb_progress :: CallbackProgress 
+                 -> IO (FunPtr (CInt -> CString -> CInt -> CUInt -> CUInt -> IO ()))
+wrap_cb_progress f = _wrap_cb_progress $ \ pg cstr ci1 ci2 ci3 -> do
+  str <- peekCString cstr
+  let i1 = fromIntegral ci1
+      i2 = fromIntegral ci2
+      i3 = fromIntegral ci3
+      epg = toEnum $ fromIntegral pg
+  f epg str i1 i2 i3
+
 -- General ------------------------------------------------------------------
 
 -- | Get ALPM's version.
@@ -141,13 +166,7 @@ getVersion = liftIO $
 
 -- Logging -------------------------------------------------------------------
 
--- typedef void (*alpm_cb_log)(pmloglevel_t, const char *, va_list);
--- int alpm_logaction(const char *fmt, ...);
-
-
 -- Downloading ---------------------------------------------------------------
-
--- char *alpm_fetch_pkgurl(alpm_handle_t *handle, const char *url);
 
 -- | Fetch a remote pkg.
 --   throws an exception on error.
@@ -328,6 +347,17 @@ optionSetFetchCallback fcb = do
   withErrorHandling $ do 
     clbk <- wrap_cb_fetch fcb
     {# call option_set_fetchcb #} hdl clbk
+
+-- | Returns the callback used for operation progress.
+--  alpm_cb_progress alpm_option_get_progresscb(alpm_handle_t *handle);
+
+-- |Sets the callback used for operation progress. 
+optionSetProgressCallback :: CallbackProgress -> ALPM ()
+optionSetProgressCallback pcb = do
+  hdl <- getHandle
+  withErrorHandling $ do
+    clbk <- wrap_cb_progress pcb
+    {# call option_set_progresscb #} hdl clbk
 
 -- Database ------------------------------------------------------------------
 
