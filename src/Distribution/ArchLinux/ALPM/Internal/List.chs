@@ -109,9 +109,6 @@ reverseList = liftM List . alpm_list_reverse . unList
 
 -- Item Accessors -------------------------------------------------------------
 
-firstList :: List a -> IO (List a)
-firstList = liftM List . alpm_list_first . unList
-
 nthList :: List a -> Int -> IO (List a)
 nthList lst n = liftM List $
   alpm_list_nth (unList lst) (fromIntegral n)
@@ -130,15 +127,12 @@ getDataList list = do
     else (return . Just) =<< pack element
 
 fromList :: ALPMType a => List a -> IO [a]
-fromList list = do
-  -- rewind list
-  flist <- firstList list
-  -- extract elements
+fromList = 
   whileJust ( \lst -> do
     el <- getDataList lst
     lst' <- nextList lst
     return (el,lst')
-    ) flist
+    ) 
  where whileJust :: (b -> IO (Maybe a,b)) -> b -> IO [a]
        whileJust f isNull = do
         (mEntry, isNull') <- f isNull 
@@ -198,9 +192,6 @@ foreign import ccall safe "alpm_list.h alpm_list_copy"
 
 foreign import ccall safe "alpm_list.h alpm_list_reverse" 
   alpm_list_reverse :: Ptr (List a) -> IO (Ptr (List a))
-
-foreign import ccall safe "alpm_list.h alpm_list_first" 
-  alpm_list_first :: Ptr (List a) -> IO (Ptr (List a))
 
 foreign import ccall safe "alpm_list.h alpm_list_next" 
   alpm_list_next :: Ptr (List a) -> IO (Ptr (List a))
