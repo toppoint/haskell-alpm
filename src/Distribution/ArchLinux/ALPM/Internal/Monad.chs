@@ -54,22 +54,30 @@ instance E.Error Exception where
 -- Functions -----------------------------------------------------------------
 
 -- | Run an alpm function with given root and database location. 
-runALPM  :: String -> String -> ALPM a -> IO (Either Exception a)
+runALPM
+    :: String                   -- ^ pacman installation root directory
+    -> String                   -- ^ pacman db directory
+    -> ALPM a                   -- ^ action to perform
+    -> IO (Either Exception a)  -- ^ result of action or error that occured
 runALPM root dbdir (ALPM action) = 
-  withCString dbdir $ \ dbdir' -> 
-   withCString root  $ \ root' -> do
-    perr <-  malloc :: IO (Ptr CInt)
-    hdl <- {# call initialize #} root' dbdir' perr
-    err <- peek perr
-    free perr
-    if err /= 0 
-      then if err > 0 
-       then return . Left . Error . toEnum . fromIntegral $ err
-       else return . Left . UnknownError . fromIntegral $ err
-      else do
-        result <- R.runReaderT (E.runErrorT action) hdl
-        _ <- {# call release #} hdl
-        return result 
+    withCString dbdir $ \ dbdir' -> 
+        withCString root  $ \ root' -> do
+            perr <- malloc :: IO (Ptr CInt)
+            poke perr 0
+
+            hdl <- {# call initialize #} root' dbdir' perr
+
+            err <- peek perr
+            free perr
+
+            if err /= 0 
+                then if err > 0 
+                    then return . Left . Error . toEnum . fromIntegral $ err
+                    else return . Left . UnknownError . fromIntegral $ err
+                else do
+                    result <- R.runReaderT (E.runErrorT action) hdl
+                    _ <- {# call release #} hdl
+                    return result 
 
 -- | Run an alpm function with default enviroment settings.
 runDefaultALPM :: ALPM a -> IO (Either Exception a)

@@ -33,6 +33,7 @@ type CallbackProgress = Progress -> String -> Int -> Int -> Int -> IO ()
 -- typedef void (*alpm_cb_log)(alpm_loglevel_t, const char *, va_list);
 
 
+
 -- Helpers ------------------------------------------------------------------
 
 getBool :: IO CInt -> ALPM Bool
@@ -55,7 +56,8 @@ setString_ :: (CString -> IO ()) -> String -> ALPM ()
 setString_ setter str = liftIO $ newCString str >>= setter
 
 setList :: ALPMType b => (Ptr a -> IO CInt) -> [b] -> ALPM ()
-setList setter lst = withErrorHandling $ (setter . castPtr . unList) =<< toList lst 
+setList setter lst = withErrorHandling $ (setter . castPtr . unList)
+                     =<< toList lst 
 
 setList_ :: ALPMType b => (Ptr a -> IO c) -> [b] -> ALPM c
 setList_ setter lst = liftIO $ (setter . castPtr . unList) =<< toList lst 
@@ -110,6 +112,7 @@ maybeToEnum n
   | n == 0    = Nothing
   | otherwise = Just $ toEnum n
 
+
 -- Callback Handlers -------------------------------------------------------
 
 foreign import ccall "wrapper"
@@ -159,6 +162,7 @@ wrap_cb_progress f = _wrap_cb_progress $ \ pg cstr ci1 ci2 ci3 -> do
       epg = toEnum $ fromIntegral pg
   f epg str i1 i2 i3
 
+
 -- General ------------------------------------------------------------------
 
 -- | Get ALPM's version.
@@ -185,6 +189,7 @@ fetchPackageURL url = do
     Just filepath -> return filepath
     Nothing       -> throw (UnknownError 0)
 
+
 -- Options -------------------------------------------------------------------
 
 -- alpm_cb_log alpm_option_get_logcb(void);
@@ -205,8 +210,9 @@ optionGetRoot = getString . {# call option_get_root #} =<< getHandle
 optionGetDatabasePath :: ALPM (Maybe FilePath)
 optionGetDatabasePath = getString . {# call option_get_dbpath #} =<< getHandle
 
-optionGetCacheDirs :: Handle -> ALPM (List String)
-optionGetCacheDirs = valueToList . {# call option_get_cachedirs #} 
+optionGetCacheDirs :: ALPM (List String)
+optionGetCacheDirs = valueToList . {# call option_get_cachedirs #}
+                    =<< getHandle
 
 optionAddCacheDir :: FilePath -> ALPM ()
 optionAddCacheDir fp = do 
@@ -218,7 +224,7 @@ optionSetCacheDirs fpl =  do
   hdl <- getHandle 
   setList ({# call option_set_cachedirs #} hdl) fpl
 
-optionRemoveCacheDir ::FilePath -> ALPM ()
+optionRemoveCacheDir :: FilePath -> ALPM ()
 optionRemoveCacheDir fp = do 
   hdl <- getHandle
   setString ({# call option_remove_cachedir #} hdl) fp
@@ -240,80 +246,114 @@ optionGetLockFile = do
 
 -- /* no set_lockfile, path is determined from dbpath */
 
-optionGetUseSyslog :: Handle -> ALPM Bool
-optionGetUseSyslog = getBool . {# call option_get_usesyslog #}
+optionGetUseSyslog :: ALPM Bool
+optionGetUseSyslog = getBool . {# call option_get_usesyslog #} =<< getHandle
 
-optionSetUseSyslog :: Handle -> Bool -> ALPM ()
-optionSetUseSyslog = setBool . {# call option_set_usesyslog #}
+optionSetUseSyslog :: Bool -> ALPM ()
+optionSetUseSyslog b = do
+    hdl <- getHandle
+    setBool ({# call option_set_usesyslog #} hdl) b
 
-optionGetNoUpgrades :: Handle -> ALPM (List String)
-optionGetNoUpgrades = valueToList . {# call option_get_noupgrades #}
+optionGetNoUpgrades :: ALPM (List String)
+optionGetNoUpgrades = valueToList . {# call option_get_noupgrades #} =<< getHandle
 
-optionAddNoUpgrade :: Handle -> String -> ALPM ()
-optionAddNoUpgrade = setString . {# call option_add_noupgrade #}
+optionAddNoUpgrade :: String -> ALPM ()
+optionAddNoUpgrade nu = do
+    hdl <- getHandle
+    setString ({# call option_add_noupgrade #} hdl) nu
 
-optionSetNoUpgrades :: Handle -> [String] -> ALPM ()
-optionSetNoUpgrades = setList .  {# call option_set_noupgrades #}
+optionSetNoUpgrades :: [String] -> ALPM ()
+optionSetNoUpgrades nus = do
+    hdl <- getHandle
+    setList ({# call option_set_noupgrades #} hdl) nus
 
-optionRemoveNoUpgrade :: Handle -> String -> ALPM ()
-optionRemoveNoUpgrade = setString . {# call option_remove_noupgrade #}
+optionRemoveNoUpgrade :: String -> ALPM ()
+optionRemoveNoUpgrade nu = do
+    hdl <- getHandle
+    setString ({# call option_remove_noupgrade #} hdl) nu
 
-optionGetNoExtracts :: Handle -> ALPM (List String)
-optionGetNoExtracts = valueToList .  {# call option_get_noextracts #}
+optionGetNoExtracts :: ALPM (List String)
+optionGetNoExtracts = valueToList . {# call option_get_noextracts #} =<< getHandle
 
-optionAddNoExtract :: Handle -> String -> ALPM ()
-optionAddNoExtract =  setString . {# call option_add_noextract #}
+optionAddNoExtract :: String -> ALPM ()
+optionAddNoExtract ne = do
+    hdl <- getHandle
+    setString ({# call option_add_noextract #} hdl) ne
 
-optionSetNoExtracts :: Handle -> [String] -> ALPM ()
-optionSetNoExtracts = setList . {# call option_set_noextracts #}
+optionSetNoExtracts :: [String] -> ALPM ()
+optionSetNoExtracts nes = do
+    hdl <- getHandle
+    setList ({# call option_set_noextracts #} hdl) nes
 
-optionRemoveNoExtract :: Handle -> String -> ALPM ()
-optionRemoveNoExtract = setString . {# call option_remove_noextract #}
+optionRemoveNoExtract :: String -> ALPM ()
+optionRemoveNoExtract ne = do
+    hdl <- getHandle
+    setString ({# call option_remove_noextract #} hdl) ne
 
-optionGetIgnorePkgs :: Handle -> ALPM (List String)
-optionGetIgnorePkgs = valueToList . {# call option_get_ignorepkgs #}
+optionGetIgnorePkgs :: ALPM (List String)
+optionGetIgnorePkgs =
+    valueToList . {# call option_get_ignorepkgs #} =<< getHandle
 
-optionAddIgnorePkg :: Handle -> String -> ALPM ()
-optionAddIgnorePkg = setString . {# call option_add_ignorepkg #}
+optionAddIgnorePkg :: String -> ALPM ()
+optionAddIgnorePkg pkg = do
+    hdl <- getHandle
+    setString ({# call option_add_ignorepkg #} hdl) pkg
 
-optionSetIgnorePkgs :: Handle -> [String] -> ALPM ()
-optionSetIgnorePkgs = setList . {# call option_set_ignorepkgs #}
+optionSetIgnorePkgs :: [String] -> ALPM ()
+optionSetIgnorePkgs ps = do
+    hdl <- getHandle
+    setList ({# call option_set_ignorepkgs #} hdl) ps
 
-optionRemoveIgnorePkg :: Handle -> String -> ALPM ()
-optionRemoveIgnorePkg = setString . {# call option_remove_ignorepkg #}
+optionRemoveIgnorePkg :: String -> ALPM ()
+optionRemoveIgnorePkg pkg = do
+    hdl <- getHandle
+    setString ({# call option_remove_ignorepkg #} hdl) pkg
 
-optionGetIgnoreGrps :: Handle -> ALPM (List String)
-optionGetIgnoreGrps = valueToList . {# call option_get_ignoregroups #}
+optionGetIgnoreGrps :: ALPM (List String)
+optionGetIgnoreGrps =
+    valueToList . {# call option_get_ignoregroups #} =<< getHandle
 
-optionAddIgnoreGrp :: Handle -> String -> ALPM ()
-optionAddIgnoreGrp = setString . {# call option_add_ignoregroup #}
+optionAddIgnoreGrp :: String -> ALPM ()
+optionAddIgnoreGrp group = do
+    hdl <- getHandle
+    setString ({# call option_add_ignoregroup #} hdl) group
 
-optionSetIgnoreGrps :: Handle -> [String] -> ALPM ()
-optionSetIgnoreGrps = setList . {# call option_set_ignoregroups #}
+optionSetIgnoreGrps :: [String] -> ALPM ()
+optionSetIgnoreGrps gs = do
+    hdl <- getHandle
+    setList ({# call option_set_ignoregroups #} hdl) gs
 
-optionRemoveIgnoreGrp :: Handle -> String -> ALPM ()
-optionRemoveIgnoreGrp = setString . {# call option_remove_ignoregroup #}
+optionRemoveIgnoreGrp :: String -> ALPM ()
+optionRemoveIgnoreGrp group = do
+    hdl <- getHandle
+    setString ({# call option_remove_ignoregroup #} hdl) group
 
-optionGetArchitecture :: Handle -> ALPM (Maybe String)
-optionGetArchitecture = getString . {# call option_get_arch #}
+optionGetArchitecture :: ALPM (Maybe String)
+optionGetArchitecture = getString . {# call option_get_arch #} =<< getHandle
 
-optionSetArchitecture :: Handle -> String -> ALPM ()
-optionSetArchitecture = setString .  {# call option_set_arch #}
+optionSetArchitecture :: String -> ALPM ()
+optionSetArchitecture arch = do
+    hdl <- getHandle
+    setString ({# call option_set_arch #} hdl) arch
 
-optionGetUseDelta :: Handle -> ALPM Bool
-optionGetUseDelta = getBool . {# call option_get_usedelta #}
+optionGetUseDelta :: ALPM Bool
+optionGetUseDelta = getBool . {# call option_get_usedelta #} =<< getHandle
 
-optionSetUserDelta :: Handle -> Bool -> ALPM ()
-optionSetUserDelta = setBool .  {# call option_set_usedelta #}
+optionSetUserDelta :: Bool -> ALPM ()
+optionSetUserDelta b = do
+    hdl <- getHandle
+    setBool ({# call option_set_usedelta #} hdl) b
 
-optionGetCheckSpace :: Handle -> ALPM Bool
-optionGetCheckSpace = getBool . {# call option_get_checkspace #}
+optionGetCheckSpace :: ALPM Bool
+optionGetCheckSpace = getBool . {# call option_get_checkspace #} =<< getHandle
 
-optionSetCheckSpace :: Handle -> Bool -> ALPM ()
-optionSetCheckSpace = setBool .  {# call option_set_checkspace #}
+optionSetCheckSpace :: Bool -> ALPM ()
+optionSetCheckSpace b = do
+    hdl <- getHandle
+    setBool ({# call option_set_checkspace #} hdl) b
 
-optionGetLocalDatabase :: Handle -> ALPM Database
-optionGetLocalDatabase = liftIO .  {# call option_get_localdb #}
+optionGetLocalDatabase :: ALPM Database
+optionGetLocalDatabase = liftIO . {# call option_get_localdb #} =<< getHandle
 
 -- | Returns the callback used to report download progress.
 -- alpm_cb_download alpm_option_get_dlcb(alpm_handle_t *handle);                   
@@ -364,16 +404,19 @@ optionSetProgressCallback pcb = do
 
 -- Database ------------------------------------------------------------------
 
-databaseRegisterSync ::Handle ->  String -> Int -> ALPM (Maybe Database)
-databaseRegisterSync hdl name pgp = stringToMaybeValue 
-  (\ cname -> {# call db_register_sync #} hdl cname (fromIntegral pgp))
-  name 
+databaseRegisterSync :: String -> Bool -> ALPM (Maybe Database)
+databaseRegisterSync name pgp = do
+    hdl <- getHandle
+    stringToMaybeValue 
+        (\ cname -> {# call db_register_sync #} hdl cname (fromBool pgp))
+        name 
 
 databaseUnregister :: Database -> ALPM ()
 databaseUnregister db = withErrorHandling $ {# call db_unregister #} db
 
-databaseUnregisterAll :: Handle ->  ALPM ()
+databaseUnregisterAll :: ALPM ()
 databaseUnregisterAll = withErrorHandling . {# call db_unregister_all #}
+                        =<< getHandle
 
 databaseGetName :: Database -> ALPM String
 databaseGetName = valueToString . {# call alpm_db_get_name #}
@@ -576,3 +619,4 @@ computeMd5Sum name = liftIO $
 strError :: Error -> ALPM String
 strError err = liftIO $
     {# call strerror #} (fromIntegral $ fromEnum err) >>= peekCString
+
